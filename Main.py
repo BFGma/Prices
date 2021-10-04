@@ -1,4 +1,5 @@
 ﻿from tkinter import *   #подключение библиотеки GUI
+import tkinter.ttk as tk       #подключение дополнительной библиотеки GUI
 from psycopg2 import *  #подключение библиотеки для postgreSQL
 
 status_now = "Not connected"    #Начальный статус соединения
@@ -64,6 +65,10 @@ def check_connection_status():
         status_now = "Not connected"
     status_bar.config(text = status_now)
     main_w.after(60000, check_connection_status)
+
+#создание окна добавления/изменения групп материалов
+
+
 
 #создание основного окна
 
