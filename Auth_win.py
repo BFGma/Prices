@@ -1,9 +1,12 @@
-from tkinter import *
+﻿from tkinter import *
 from psycopg2 import *
 
+conn = ()
+
 def login(string1, string2, name, name2):
+    global conn
     try:
-        conn = connect(dbname = "Test", user = string1, password = string2, port = "5432")
+        conn = connect(dbname = "Prices", user = string1, password = string2, port = "5432")
         name.destroy()
     except:
         result_log = "Неверный логин/пароль"
@@ -23,3 +26,4 @@ def auth(name):
     auth_pass.grid(column = 1, row = 3, columnspan = 3)
     but_try_log.grid(column = 1, row = 5)
     but_cancel_log.grid(column = 3, row = 5)
+    return conn
