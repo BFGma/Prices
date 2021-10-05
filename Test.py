@@ -43,8 +43,8 @@ for d in group:
     i += 1
 
 scroll.grid(column = 2, row = 0, sticky = S + E + N)
-tree_group.grid(column = 0, row = 0)
-tree_box.grid(column = 3, row = 0)
+tree_group.grid(column = 0, row = 0, sticky = N + S)
+tree_box.grid(column = 3, row = 0, sticky = N + S)
 scroll2.grid(column = 5, row = 0, sticky = S + E + N)
 #paned.add(tree_group)
 #paned.add(tree_box)

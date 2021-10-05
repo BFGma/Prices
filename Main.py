@@ -5,6 +5,7 @@ from psycopg2 import *  #подключение библиотеки для post
 status_now = "Not connected"    #Начальный статус соединения
 conn = ()   #переменная для установки соединения с БД
 
+
 #функция авторизации
 
 def login(string1, string2, name, name2):
@@ -46,6 +47,8 @@ def auth(name):
 #функция закрытия окна по кнопке Х
 
 def closing():
+    if (conn):
+        conn.close()
     main_w.destroy()
 
 #функция проверки наличия соединения раз в 60000 мс
@@ -66,8 +69,81 @@ def check_connection_status():
     status_bar.config(text = status_now)
     main_w.after(60000, check_connection_status)
 
+#функция заполнения таблицы группы материалов
+
+def fill_material_group(tree):
+    i = 0
+    cur = conn.cursor()
+    cur.execute("SELECT name FROM material_group ORDER BY name")
+    group = cur.fetchall()
+    for a in group:
+        tree.insert(parent = '', index = i, iid = a, values = a)
+        i += 1
+    cur.close()
+
+#заполнение дерева из таблицы материалов
+
+nowopened_material_unit_w = ""
+
+def tree_material_unit_fill(focused, treeto):
+    i = 0
+    global nowopened_material_unit_w
+    opened = focused
+    treeto.insert(parent = '', index = 1000, iid = 1000, values = ('foo', 'bar'))
+    if opened == nowopened_material_unit_w:
+        return
+    treeto.delete(*tree.get_children())
+    treeto.insert(parent = '', index = 999, iid = 999, values = ('puk', 'srenk'))
+    nowopened_material_unit_w = opened
+    if conn:
+        cur = conn.cursor()
+        cur.execute("SELECT №, name, price FROM material_unit WHERE group_name = " + opened)
+        unit = cur.fetchall()
+        for a, b, c in unit:
+            treeto.insert(parent = '', index = i, iid = a, values = (b, c))
+            i += 1
+        cur.close()
+
 #создание окна добавления/изменения групп материалов
 
+def material_group_window():
+    material_group_w = Toplevel(main_w)
+    material_group_w.title = "Таблица групп материалов"
+    material_group_w.resizable(0, 0)
+    tree_group = tk.Treeview(material_group_w, show = "headings", columns = "Name", selectmode = "browse")
+    tree_group.heading("#1", text = "Название")
+    tree_group.column("#1", minwidth = 300, width = 300, stretch = NO)
+    scroll = tk.Scrollbar(material_group_w, command = tree_group.yview)
+    tree_group.configure(yscrollcommand = scroll.set)
+    tree_group.grid(column = 0, row = 1, sticky = N + W + S)
+    scroll.grid(column = 1, row = 1, sticky = N + S)
+    fill_material_group(tree_group)
+
+
+#создание окна добавления/изменения материалов
+
+def material_unit_window():
+    material_unit_w = Toplevel(main_w)
+    material_unit_w.title = "Таблица материалов"
+    material_unit_w.resizable(0, 0)
+    tree_group = tk.Treeview(material_unit_w, show = "headings", column = "Name", selectmode = "browse")
+    tree_group.heading("#1", text = "Название")
+    tree_group.column("#1", minwidth = 300, width = 300, stretch = NO)
+    scroll = tk.Scrollbar(material_unit_w, command = tree_group.yview)
+    tree_group.configure(yscrollcommand = scroll.set)
+    tree_unit = tk.Treeview(material_unit_w, show = "headings", columns = ("Name", "Price"), selectmode = "browse")
+    tree_unit.heading("#1", text = "Название")
+    tree_unit.heading("#2", text = "Цена")
+    tree_unit.column("#1", minwidth = 300, width = 300, stretch = NO)
+    tree_unit.column("#2", minwidth = 100, width = 100, stretch = NO)
+    scroll2 = tk.Scrollbar(material_unit_w, command = tree_unit.yview)
+    tree_unit.configure(yscrollcommand = scroll2.set)
+    tree_group.grid(column = 0, row = 1, sticky = N + W + S)
+    scroll.grid(column = 1, row = 1, sticky = N + S)
+    tree_unit.grid(column = 2, row = 1, sticky = N + S)
+    scroll2.grid(column = 3, row = 1, sticky = N + S + E)
+    fill_material_group(tree_group)
+    tree_group.bind('<ButtonRelease-1>', tree_material_unit_fill(tree_group.focus, tree_unit))
 
 
 #создание основного окна
@@ -82,10 +158,10 @@ auth(main_w)    #вызов окна авторизации
 
 #верстка главного окна
 
-but_Mat_group = Button(main_w, text = "Группы\nматериалов", justify = CENTER, width = 12, height = 2)
+but_Mat_group = Button(main_w, text = "Группы\nматериалов", justify = CENTER, width = 12, height = 2, command = material_group_window)
 but_Prod_group = Button(main_w, text = "Группы\nпродукции", justify = CENTER, width = 12, height = 2)
 but_Prod_box = Button(main_w, text = "Корпуса", width = 12, height = 2)
-but_Mat = Button(main_w, text = "Материалы", width = 12, height = 2)
+but_Mat = Button(main_w, text = "Материалы", width = 12, height = 2, command = material_unit_window)
 but_Scheme = Button(main_w, text = "Схемы", width = 12, height = 2)
 but_print_mat = Button(main_w, text = "Печать цен\nматериалов", justify = CENTER, width = 12, height = 2)
 but_print_prod = Button(main_w, text = "Печать прайса", width = 12, height = 2)
