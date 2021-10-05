@@ -85,19 +85,16 @@ def fill_material_group(tree):
 
 nowopened_material_unit_w = ""
 
-def tree_material_unit_fill(focused, treeto):
+def tree_material_unit_fill(opened, treeto):
     i = 0
     global nowopened_material_unit_w
-    opened = focused
-    treeto.insert(parent = '', index = 1000, iid = 1000, values = ('foo', 'bar'))
     if opened == nowopened_material_unit_w:
         return
-    treeto.delete(*tree.get_children())
-    treeto.insert(parent = '', index = 999, iid = 999, values = ('puk', 'srenk'))
+    treeto.delete(*treeto.get_children())
     nowopened_material_unit_w = opened
     if conn:
         cur = conn.cursor()
-        cur.execute("SELECT №, name, price FROM material_unit WHERE group_name = " + opened)
+        cur.execute('SELECT №, name, price FROM material_unit WHERE group_name = %s', (opened,))
         unit = cur.fetchall()
         for a, b, c in unit:
             treeto.insert(parent = '', index = i, iid = a, values = (b, c))
@@ -143,7 +140,7 @@ def material_unit_window():
     tree_unit.grid(column = 2, row = 1, sticky = N + S)
     scroll2.grid(column = 3, row = 1, sticky = N + S + E)
     fill_material_group(tree_group)
-    tree_group.bind('<ButtonRelease-1>', tree_material_unit_fill(tree_group.focus, tree_unit))
+    tree_group.bind('<ButtonRelease-1>', lambda event: tree_material_unit_fill(tree_group.focus(), tree_unit))
 
 
 #создание основного окна
