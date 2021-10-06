@@ -4,7 +4,8 @@ from psycopg2 import *  #подключение библиотеки для post
 
 status_now = "Not connected"    #Начальный статус соединения
 conn = ()   #переменная для установки соединения с БД
-
+material_unit_w_status = {} #словарь параметров окна материалов
+scheme_w_status = {} #словарь параметров окна схемы
 
 #функция авторизации
 
@@ -116,13 +117,32 @@ def material_group_window():
     scroll.grid(column = 1, row = 1, sticky = N + S)
     fill_material_group(tree_group)
 
+#добаление группы
+
+def popup_change_group(window):
+    global material_unit_w_status
+    if ('addgroup' in material_unit_w_status):
+        if (material_unit_w_status['addgroup'] == "1"):
+            material_unit_w_status['but_add'].grid_forget()
+            material_unit_w_status['but_del'].grid_forget()
+            material_unit_w_status['entry_name'].grid_forget()
+            material_unit_w_status['addgroup'] = "0"
+            return
+    material_unit_w_status['entry_name'] = Entry(window, text = "")
+    material_unit_w_status['but_del'] = Button(window, text = "del")
+    material_unit_w_status['but_add'] = Button(window, text = "add")
+    material_unit_w_status['entry_name'].grid(column = 0, row = 3)
+    material_unit_w_status['but_del'].grid(column = 0, row = 4)
+    material_unit_w_status['but_add'].grid(column = 0, row = 5)
+    window.update()
+    material_unit_w_status['addgroup'] = "1"
 
 #создание окна добавления/изменения материалов
 
 def material_unit_window():
     material_unit_w = Toplevel(main_w)
     material_unit_w.title = "Таблица материалов"
-    material_unit_w.resizable(0, 0)
+    ##material_unit_w.resizable(0, 0)
     tree_group = tk.Treeview(material_unit_w, show = "headings", column = "Name", selectmode = "browse")
     tree_group.heading("#1", text = "Название")
     tree_group.column("#1", minwidth = 300, width = 300, stretch = NO)
@@ -135,6 +155,11 @@ def material_unit_window():
     tree_unit.column("#2", minwidth = 100, width = 100, stretch = NO)
     scroll2 = tk.Scrollbar(material_unit_w, command = tree_unit.yview)
     tree_unit.configure(yscrollcommand = scroll2.set)
+    if 1:#CHANGE FOR USERS
+        butt_add_group = Button(material_unit_w, text = "Добавление группы", command = lambda: popup_change_group(material_unit_w))
+        butt_add_unit = Button(material_unit_w, text = "Добавление комплектующих")
+        butt_add_group.grid(column = 0, row = 2, sticky = W + E)
+        butt_add_unit.grid(column = 2, row = 2, sticky = W + E) 
     tree_group.grid(column = 0, row = 1, sticky = N + W + S)
     scroll.grid(column = 1, row = 1, sticky = N + S)
     tree_unit.grid(column = 2, row = 1, sticky = N + S)
