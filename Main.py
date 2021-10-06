@@ -121,19 +121,12 @@ def material_group_window():
 
 def popup_change_group(window):
     global material_unit_w_status
-    if ('addgroup' in material_unit_w_status):
-        if (material_unit_w_status['addgroup'] == "1"):
-            material_unit_w_status['but_add'].grid_forget()
-            material_unit_w_status['but_del'].grid_forget()
-            material_unit_w_status['entry_name'].grid_forget()
-            material_unit_w_status['addgroup'] = "0"
-            return
     material_unit_w_status['entry_name'] = Entry(window, text = "")
     material_unit_w_status['but_del'] = Button(window, text = "del")
     material_unit_w_status['but_add'] = Button(window, text = "add")
-    material_unit_w_status['entry_name'].grid(column = 0, row = 3)
-    material_unit_w_status['but_del'].grid(column = 0, row = 4)
-    material_unit_w_status['but_add'].grid(column = 0, row = 5)
+    material_unit_w_status['entry_name'].grid(column = 1, row = 4, columnspan = 3, sticky = N + S + W + E)
+    material_unit_w_status['but_del'].grid(column = 1, row = 6, sticky = N + S + W + E)
+    material_unit_w_status['but_add'].grid(column = 3, row = 6, sticky = N + S + W + E)
     window.update()
     material_unit_w_status['addgroup'] = "1"
 
@@ -142,7 +135,7 @@ def popup_change_group(window):
 def material_unit_window():
     material_unit_w = Toplevel(main_w)
     material_unit_w.title = "Таблица материалов"
-    ##material_unit_w.resizable(0, 0)
+    material_unit_w.resizable(0, 0)
     tree_group = tk.Treeview(material_unit_w, show = "headings", column = "Name", selectmode = "browse")
     tree_group.heading("#1", text = "Название")
     tree_group.column("#1", minwidth = 300, width = 300, stretch = NO)
@@ -158,12 +151,12 @@ def material_unit_window():
     if 1:#CHANGE FOR USERS
         butt_add_group = Button(material_unit_w, text = "Добавление группы", command = lambda: popup_change_group(material_unit_w))
         butt_add_unit = Button(material_unit_w, text = "Добавление комплектующих")
-        butt_add_group.grid(column = 0, row = 2, sticky = W + E)
-        butt_add_unit.grid(column = 2, row = 2, sticky = W + E) 
-    tree_group.grid(column = 0, row = 1, sticky = N + W + S)
-    scroll.grid(column = 1, row = 1, sticky = N + S)
-    tree_unit.grid(column = 2, row = 1, sticky = N + S)
-    scroll2.grid(column = 3, row = 1, sticky = N + S + E)
+        butt_add_group.grid(column = 0, row = 2, columnspan = 6, sticky = N + S + W + E)
+        butt_add_unit.grid(column = 7, row = 2, columnspan = 8, sticky = N + S + W + E) 
+    tree_group.grid(column = 0, row = 1, columnspan = 6, sticky = N + S + W + E)
+    scroll.grid(column = 6, row = 1, sticky = N + S + W + E)
+    tree_unit.grid(column = 7, row = 1, columnspan = 8, sticky = N + S + W + E)
+    scroll2.grid(column = 15, row = 1, sticky = N + S + W + E)
     fill_material_group(tree_group)
     tree_group.bind('<ButtonRelease-1>', lambda event: tree_material_unit_fill(tree_group.focus(), tree_unit))
 

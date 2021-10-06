@@ -1,55 +1,57 @@
 from tkinter import *
 import tkinter.ttk as tk
 
-now_opened_box = ""
+class widgets:
 
-def tree_box_fill(a):
-    i = 0
-    global now_opened_box
-    opened_box = tree_group.focus()
-    if opened_box == now_opened_box:
-        return
-    tree_box.delete(*tree_box.get_children())
-    now_opened_box = opened_box
-    if tree_group.focus() == "Реле":
-        for a in box1:
-            tree_box.insert(parent = '', index = i, values = (a))
-            i += 1
-    if tree_group.focus() == "Рубильник":
-        for a in box2:
-            tree_box.insert(parent = '', index = i, values = (a))
-            i += 1
+    def __init__(self, parent, w_type, **sets):
+        self.parent = parent
+        self.status = 0
+        self.type = w_type
+        self.new_wid = self.type(parent)
+        for a, b in sets.items():
+            self.new_wid[a] = b
+        if self.type == tk.Treeview:
+            self.scroll = tk.Scrollbar(parent, command = self.new_wid.yview)
+            self.new_wid.configure(yscrollcommand = self.scroll.set)
 
-group = ["Рубильник", "Реле", "Предохранитель", "442", "23", "44", "33", "21", "27", "11", "19", "12"]
-box1 = ["1", "2", "3", "4", "5", "6"]
-box2 = ["7", "8"]
+    def wid_grid(self, **sets):
+        self.new_wid.grid(column = sets.get("column"), row = sets.get("row"), columnspan = sets.get("columnspan", 1), \
+                rowspan = sets.get("rowspan", 1), sticky = sets.get("sticky", ""))
+        if self.type == tk.Treeview:
+            self.scroll.grid(column = sets.get("column") + 1, row = sets.get("row"), columnspan = sets.get("columnspan", 1), \
+                    rowspan = sets.get("rowspan", 1), sticky = N + S)
+        self.status = 1
+
+    def wid_forget(self):
+        self.new_wid.grid_forget()
+        if self.type == tk.Treeview:
+            self.scroll.grid_forget()
+        self.status = 2
+
+    def wid_upd(self, **sets):
+        for a, b in sets.items():
+            self.mew_wid.config(a = b)
+
+    def treeview_param(self, col_n, **sets):
+        if self.type == tk.Treeview:
+            a = 0
+            while a <= col_n:
+                self.new_wid.heading("#{}".format(a), text = sets.get("text_{}".format(a), ""))
+                self.new_wid.column("#{}".format(a), minwidth = sets.get("minwidth_{}".format(a), 0), width = sets.get("width_{}".format(a), 100), \
+                        stretch = sets.get("stretch_{}".format(a,), "YES"))
+                a += 1
 
 root = Tk()
-
-#paned = tk.PanedWindow(orient = HORIZONTAL)
-tree_group = tk.Treeview(root, show = "headings", columns = ("Name"), selectmode = 'browse')
-tree_box = tk.Treeview(root, show = "headings", columns = ("Name", "Price"), selectmode = 'browse')
-tree_group.heading("#1", text = "Название")
-tree_group.column("#1", minwidth = 210, width = 200, stretch = NO)
-scroll = tk.Scrollbar(root, command = tree_group.yview)
-tree_group.configure(yscrollcommand = scroll.set)
-scroll2 = tk.Scrollbar(root, command = tree_box.yview)
-tree_box.configure(yscrollcommand = scroll2.set)
-
-i = 0
-
-for d in group:
-    tree_group.insert(parent ='', index = i, iid = d, values = d)
-    i += 1
-
-scroll.grid(column = 2, row = 0, sticky = S + E + N)
-tree_group.grid(column = 0, row = 0, sticky = N + S)
-tree_box.grid(column = 3, row = 0, sticky = N + S)
-scroll2.grid(column = 5, row = 0, sticky = S + E + N)
-#paned.add(tree_group)
-#paned.add(tree_box)
-#paned.grid(column = 1, row = 0)
-
-tree_group.bind('<ButtonRelease-1>', tree_box_fill)
-
+zaloopa = widgets(root, Button, text = "ebat")
+zaloopa.wid_grid(column = 1, row = 1)
+zaloopa.wid_forget()
+zaloopa.wid_grid(column = 1, row = 1)
+zaloopa.wid_upd()
+puk = widgets(root, tk.Treeview, show = "headings", column = ("Name", "Price"), selectmode = "browse")
+puk.wid_grid(column = 1, row = 2)
+puk2 = widgets(root, tk.Treeview, show = "headings", column = "Name", selectmode = "browse")
+puk2.wid_grid(column = 3, row = 2)
+puk.treeview_param(2, text_1 = "puk", minwidth_1 = 10, width_1 = 100, stretch_1 = "NO", text_2 ="srenk", minwidth_2 = 10, width_2 = 100, stretch_2 = "NO")
+puk2.treeview_param(1, text_1 = "puki", minwidth_1 = 10, width_1 = 100, stretch_1 = "NO")
+puk2.new_wid.insert("1", "2")
 root.mainloop()
