@@ -105,8 +105,6 @@ class wind(Tk):
                     self.columnconfigure(num, minsize = ms)
                     print("col",num,ms)
                 test = 0
-            
-                
 
 main_w = Tk()
 main_w.title("База данных цен")
