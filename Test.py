@@ -1,7 +1,10 @@
 from tkinter import *
 import tkinter.ttk as tk
+from psycopg2 import *
 
-class widgets:
+conn = ()
+
+class basic(Widget):
 
     def __init__(self, parent, w_type, **sets):
         self.parent = parent
@@ -10,48 +13,116 @@ class widgets:
         self.new_wid = self.type(parent)
         for a, b in sets.items():
             self.new_wid[a] = b
-        if self.type == tk.Treeview:
-            self.scroll = tk.Scrollbar(parent, command = self.new_wid.yview)
-            self.new_wid.configure(yscrollcommand = self.scroll.set)
-
-    def wid_grid(self, **sets):
-        self.new_wid.grid(column = sets.get("column"), row = sets.get("row"), columnspan = sets.get("columnspan", 1), \
-                rowspan = sets.get("rowspan", 1), sticky = sets.get("sticky", ""))
-        if self.type == tk.Treeview:
-            self.scroll.grid(column = sets.get("column") + 1, row = sets.get("row"), columnspan = sets.get("columnspan", 1), \
-                    rowspan = sets.get("rowspan", 1), sticky = N + S)
+       
+    def grid(self, col = 0, r = 0, cols = 1, rows = 1, stick = ""):
+        if self.status == 2:
+            self.new_wid.grid()
+            self.status = 1
+            return
+        self.new_wid.grid(column = col, row = r, columnspan = cols, rowspan = rows, sticky = stick)
         self.status = 1
 
-    def wid_forget(self):
-        self.new_wid.grid_forget()
-        if self.type == tk.Treeview:
-            self.scroll.grid_forget()
+    def remove(self):
+        self.new_wid.grid_remove()
         self.status = 2
 
-    def wid_upd(self, **sets):
+    def upd(self, **sets):
         for a, b in sets.items():
             self.mew_wid.config(a = b)
 
-    def treeview_param(self, col_n, **sets):
-        if self.type == tk.Treeview:
-            a = 0
-            while a <= col_n:
-                self.new_wid.heading("#{}".format(a), text = sets.get("text_{}".format(a), ""))
-                self.new_wid.column("#{}".format(a), minwidth = sets.get("minwidth_{}".format(a), 0), width = sets.get("width_{}".format(a), 100), \
+class trees(tk.Treeview):
+
+    def __init__(self, parent, **sets):
+        self.parent = parent
+        self.status = 0
+        self.tree = tk.Treeview(parent, show = "headings", selectmode = "browse")
+        for a, b in sets.items():
+            self.tree[a] = b
+        self.scroll = tk.Skrollbar(parent, command = self.tree.yview)
+        self.tree.configure(yscrollcommand = self.scroll.set)
+
+    def grid(self, col = 0, r = 0, cols = 1, rows = 1, stick = ""):
+        if self.status == 2:
+            self.tree.grid()
+            self.scroll.grid()
+            self.status = 1
+            return
+        self.tree.grid(column = col, row = r, columnspan = cols, rowspan = rows, sticky = stick)
+        self.scroll.grid(column = col + 1, row = r, columnspan = 1, rowspan = rows, sticky = N + S)
+        self.status = 1
+
+    def size(self, col_n, **sets):
+        a = 0
+        while a <= col_n:
+                self.tree.heading("#{}".format(a), text = sets.get("text_{}".format(a), ""))
+                self.tree.column("#{}".format(a), minwidth = sets.get("minwidth_{}".format(a), 0), width = sets.get("width_{}".format(a), 100), \
                         stretch = sets.get("stretch_{}".format(a,), "YES"))
                 a += 1
 
-root = Tk()
-zaloopa = widgets(root, Button, text = "ebat")
-zaloopa.wid_grid(column = 1, row = 1)
-zaloopa.wid_forget()
-zaloopa.wid_grid(column = 1, row = 1)
-zaloopa.wid_upd()
-puk = widgets(root, tk.Treeview, show = "headings", column = ("Name", "Price"), selectmode = "browse")
-puk.wid_grid(column = 1, row = 2)
-puk2 = widgets(root, tk.Treeview, show = "headings", column = "Name", selectmode = "browse")
-puk2.wid_grid(column = 3, row = 2)
-puk.treeview_param(2, text_1 = "puk", minwidth_1 = 10, width_1 = 100, stretch_1 = "NO", text_2 ="srenk", minwidth_2 = 10, width_2 = 100, stretch_2 = "NO")
-puk2.treeview_param(1, text_1 = "puki", minwidth_1 = 10, width_1 = 100, stretch_1 = "NO")
-puk2.new_wid.insert("1", "2")
-root.mainloop()
+    def remove(self):
+        self.tree.grid_remove()
+        self.status = -1
+
+class wind(Tk):
+
+    def __init__(self, parent = None, **sets):
+        Toplevel.__init__(self, parent)
+        self.title(sets.get('text', ""))
+        self.withdraw()
+        self.status = 0
+        self.resizable(0, 0)
+        self.protocol("WM_DELETE_WINDOW", sets.get("close", self.closing))
+    
+    def closing(self):
+        self.status = 0
+        self.withdraw()
+
+    def open(self):
+        if self.status == 1:
+            return
+        self.status = 1
+        self.deiconify()
+
+    def table(self, *sets):
+        test = 0
+        cr = 0
+        num = 0
+        ms = 0
+        for a in sets:
+            print(a)
+            if test == 0:
+                test = 1
+                cr = a
+            elif test == 1:
+                test = 2
+                num = a
+            elif test == 2:
+                ms = a
+                if cr == 'r':
+                    self.rowconfigure(num, minsize = ms)
+                    print("row", num,ms)
+                if cr == 'c':
+                    self.columnconfigure(num, minsize = ms)
+                    print("col",num,ms)
+                test = 0
+            
+                
+
+main_w = Tk()
+main_w.title("База данных цен")
+main_w.geometry('590x220+{}+{}'.format((main_w.winfo_screenwidth() // 2 - 300), (main_w.winfo_screenheight() // 2 - 100)))
+main_w.protocol("WN_DELETE_WINDOW")
+
+mat_w = wind(main_w, text = "Материалы", )
+box_w = wind(main_w, text = "Корпуса")
+sch_w = wind(main_w, text = "Схемы")
+mat_w.table("r", 0 , 20, "r", 3, 39, "r", 5, 20, 'c', 0, 20, 'c', 2, 20, 'c', 4, 20, 'c', 6, 20, 'c', 8, 20, 'c', 10, 200)
+
+main_mat_w_open = basic(main_w, Button, text = "Материалы", command = lambda: mat_w.open())
+main_mat_w_open.grid(1, 1, 1, 1, N + S + W + E)
+main_box_w_open = basic(mat_w, Button, text = "Корпуса", command = lambda:box_w.open())
+main_box_w_open.grid(1, 1, 1, 1, N + S + W + E)
+main_sch_w_open = basic(main_w, Button, text = "Схемы", command = lambda: sch_w.open())
+main_sch_w_open.grid(5, 1, 1, 1, N + S + W + E)
+
+main_w.mainloop()

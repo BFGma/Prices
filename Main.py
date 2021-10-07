@@ -8,7 +8,6 @@ material_unit_w_status = {} #словарь параметров окна мат
 scheme_w_status = {} #словарь параметров окна схемы
 
 #функция авторизации
-
 def login(string1, string2, name, name2):
     global conn
     global status_now
@@ -22,7 +21,6 @@ def login(string1, string2, name, name2):
         name2.config(text = result_log)
 
 #создание окна авторизации
-
 def auth(name):
     result_log = "Введите логин и пароль"
     auth_w = Toplevel(name)
@@ -46,14 +44,12 @@ def auth(name):
     auth_w.protocol("WM_DELETE_WINDOW", name.destroy)
 
 #функция закрытия окна по кнопке Х
-
 def closing():
     if (conn):
         conn.close()
     main_w.destroy()
 
 #функция проверки наличия соединения раз в 60000 мс
-
 def check_connection_status():
     global status_now
     if (conn):
@@ -71,7 +67,6 @@ def check_connection_status():
     main_w.after(60000, check_connection_status)
 
 #функция заполнения таблицы группы материалов
-
 def fill_material_group(tree):
     i = 0
     cur = conn.cursor()
@@ -82,10 +77,9 @@ def fill_material_group(tree):
         i += 1
     cur.close()
 
-#заполнение дерева из таблицы материалов
-
 nowopened_material_unit_w = ""
 
+#заполнение дерева из таблицы материалов
 def tree_material_unit_fill(opened, treeto):
     i = 0
     global nowopened_material_unit_w
@@ -103,7 +97,6 @@ def tree_material_unit_fill(opened, treeto):
         cur.close()
 
 #создание окна добавления/изменения групп материалов
-
 def material_group_window():
     material_group_w = Toplevel(main_w)
     material_group_w.title = "Таблица групп материалов"
@@ -118,7 +111,6 @@ def material_group_window():
     fill_material_group(tree_group)
 
 #добаление группы
-
 def popup_change_group(window):
     global material_unit_w_status
     material_unit_w_status['entry_name'] = Entry(window, text = "")
@@ -131,7 +123,6 @@ def popup_change_group(window):
     material_unit_w_status['addgroup'] = "1"
 
 #создание окна добавления/изменения материалов
-
 def material_unit_window():
     material_unit_w = Toplevel(main_w)
     material_unit_w.title = "Таблица материалов"
