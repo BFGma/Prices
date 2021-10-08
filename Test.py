@@ -4,7 +4,7 @@ from psycopg2 import *
 
 global conn, status_now
 conn = ()
-status_now = "Not connected ..."
+status_now = 0
 
 class basic(Widget):
     def __init__(self, parent, w_type, **sets):
@@ -28,30 +28,14 @@ class basic(Widget):
         for a, b in sets.items():
             self.new_wid[a] = b
 
-#class entry_w(Entry):
-#    def __init__(self, parent, w_type, **sets):
-#        super(entry_w, self).__init__()
-#        self.parent = parent
-#        self.status = 0
-#        self.type = w_type
-#        self.new_wid = self.type(parent)
-#        for a, b in sets.items():
-#            self.new_wid[a] = b
-#    def grid(self, col = 0, r = 0, cols = 1, rows = 1, stick = ""):
-#        basic.grid(self, col, r, cols, rows, stick = "")
-#    def remove(self):
-#        basic.remove(self)
-#    def upd(self, **sets):
-#        basic.upd(self, **sets)
-
 class trees(tk.Treeview):
     def __init__(self, parent, **sets):
-        self.parent = parent
+        self.parentt = parent
         self.status = 0
         self.tree = tk.Treeview(parent, show = "headings", selectmode = "browse")
         for a, b in sets.items():
             self.tree[a] = b
-        self.scroll = tk.Skrollbar(parent, command = self.tree.yview)
+        self.scroll = tk.Scrollbar(parent, command = self.tree.yview)
         self.tree.configure(yscrollcommand = self.scroll.set)
     def grid(self, col = 0, r = 0, cols = 1, rows = 1, stick = ""):
         if self.status == 2:
@@ -60,7 +44,7 @@ class trees(tk.Treeview):
             self.status = 1
             return
         self.tree.grid(column = col, row = r, columnspan = cols, rowspan = rows, sticky = stick)
-        self.scroll.grid(column = col + 1, row = r, columnspan = 1, rowspan = rows, sticky = N + S)
+        self.scroll.grid(column = col + cols, row = r, columnspan = 1, rowspan = rows, sticky = N + S)
         self.status = 1
     def size(self, col_n, **sets):
         a = 0
@@ -115,15 +99,14 @@ class programm:
         root.geometry('590x220+{}+{}'.format((root.winfo_screenwidth() // 2 - 300), (root.winfo_screenheight() // 2 - 100)))
         #root.protocol("WN_DELETE_WINDOW")
 
-        self.mat_w = wind(root, text = "Материалы")
+        self.mat_w = mat_w(root, text = "Материалы")
         self.box_w = wind(root, text = "Корпуса")
         self.sch_w = wind(root, text = "Схемы")
         self.auth_w = auth_w(root, text = "Авторизация", close = lambda: root.destroy())
-        self.sett_w = wind(root,text = "Настройки")
+        self.sett_w = wind(root, text = "Настройки")
 
         wind.table(root, "r", 0, 20, "r", 1, 30, "r", 2, 20, "c", 0, 20, "c", 1, 50, "c", 2, 20, "c", 3, 50, "c", 4, 20, "c", 5, 50, "c", 6, 20)
-
-        self.mat_w_open = basic(root, Button, text = "Материалы", command = lambda: self.auth_w.open(), width = 10)
+        self.mat_w_open = basic(root, Button, text = "Материалы", command = lambda: self.mat_w.open(), width = 10)
         self.mat_w_open.grid(1, 1, 1, 1, N + S + W + E)
         self.box_w_open = basic(root, Button, text = "Корпуса", command = lambda: self.box_w.open(), width = 10)
         self.box_w_open.grid(3, 1, 1, 1, N + S + W + E)
@@ -131,14 +114,14 @@ class programm:
         self.sch_w_open.grid(5, 1, 1, 1, N + S + W + E)
         self.setts = basic(root, Button, bitmap = 'gray12', command = lambda: self.sett_w.open())
         self.setts.grid(0, 3, 1, 1, N + S + W + E)
-        self.status = basic(root, Label, text = status_now, bg = 'grey')
+        self.status = basic(root, Label, text = "Not connected...", bg = 'grey')
         self.status.grid(1, 3, 7, 1, N + S + W + E)
 
 class auth_w(wind):
     def __init__(self, parent, **sets):
         self.auth_w = wind.__init__(self, parent, **sets)
-        
-        self.protocol("WM_DELETE_WINDOW", lambda: main_w.destroy())
+        self.open()
+        self.grab_set()
         self.status = "Введите логин/пароль"
         self.note = basic(self, Label, text = self.status)
         self.entry_log = basic(self, Entry, width = 30)
@@ -151,20 +134,34 @@ class auth_w(wind):
         self.butt_ok.grid(1, 6, 1, 1, N + S + W + E)
         self.butt_cancel.grid(3, 6, 1, 1, N + S + W + E)
         self.table('r', 0, 20, 'r', 3, 10, 'r', 5, 20, 'r', 7, 20, 'c', 0, 20, 'c', 4, 20)
-
     def try_auth(self):
         global conn, status_now
         self.login = self.entry_log.new_wid.get()
         self.passw = self.entry_pass.new_wid.get()
         try:
             conn = connect(dbname = "Prices", user = self.login, password = self.passw, port = "5432")
-            status_now = "Connected"
-            main.status.upd(text = status_now)
+            status_now = 1
+            main.status.upd(text = "Connected as {}".format(self.login))
             self.destroy()
         except:
             self.status = "Неверный логин/пароль"
             self.note.upd(text = self.status)
             
+class mat_w(wind):
+    def __init__(self, parent, **sets):
+        self.mat_w = wind.__init__(self, parent, **sets)
+        self.tree_m_gr = trees(self, columns = "Name")
+        self.tree_m_u = trees(self, columns = ("Name", "Price", "Date"))
+        self.tree_m_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
+        self.tree_m_u.size(3, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
+            text_2 = "Цена", width_2 = 80, minwidth_2 = 80, stretch_2 = NO, \
+                text_3 = "Дата", width_3 = 80, minwidth_3 = 80, stretch_3 = NO)
+        self.tree_m_gr.grid(0, 1, 1, 1, N + S + W + E)
+        self.tree_m_u.grid(2, 1, 1, 1, N + S + W + E)
+    
+    def fill(self):
+        pass #функция заполнения
+
 
 #def connection():
 #    global conn, status
