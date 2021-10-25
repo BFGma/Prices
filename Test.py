@@ -142,10 +142,25 @@ class auth_w(wind):
             conn = connect(dbname = "Prices", user = self.login, password = self.passw, port = "5432")
             status_now = 1
             main.status.upd(text = "Connected as {}".format(self.login))
-            self.destroy()
+            self.grab_release()
+            self.closing()
         except:
             self.status = "Неверный логин/пароль"
             self.note.upd(text = self.status)
+    def check_conn(self):
+        global conn, status_now
+        try:
+            self.cur = conn.cursor()
+            self.cur.execute("SELECT")
+            self.cur.close()
+            status_now = 1
+        except:
+            status_now = 0
+            self.open()
+            self.grab_set()
+        
+        
+
             
 class mat_w(wind):
     def __init__(self, parent, **sets):
@@ -158,9 +173,18 @@ class mat_w(wind):
                 text_3 = "Дата", width_3 = 80, minwidth_3 = 80, stretch_3 = NO)
         self.tree_m_gr.grid(0, 1, 1, 1, N + S + W + E)
         self.tree_m_u.grid(2, 1, 1, 1, N + S + W + E)
-    
+        self.fill()
     def fill(self):
-        pass #функция заполнения
+        pass
+    #    i = 0
+    #    self.cur = conn.cursor()
+    #    self.cur.execute("SELECT name FROM material_group ORDER BY name")
+    #    group = self.cur.fetchall()
+    #    for a in group:
+    #        self.tree_m_gr.insert(parent = '', index = i, iid = a, values = a)
+    #        i += 1
+    #    self.cur.close()
+
 
 
 #def connection():
