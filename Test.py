@@ -1,10 +1,12 @@
 from tkinter import *
+from tkinter import messagebox
 import tkinter.ttk as tk
 from psycopg2 import *
 
 global conn, status_now
 conn = ()
 status_now = 0
+role = 1
 
 class basic(Widget):
     def __init__(self, parent, w_type, **sets):     #создание класса виджетов
@@ -97,7 +99,7 @@ class programm:
     def __init__(self, root):       #инициализация главного окна
         root.title("База данных цен")
         root.geometry('590x220+{}+{}'.format((root.winfo_screenwidth() // 2 - 300), (root.winfo_screenheight() // 2 - 100)))
-        #root.protocol("WN_DELETE_WINDOW")
+        root.protocol("WN_DELETE_WINDOW", self.closing)
         self.mat_w = mat_w(root, text = "Материалы")
         self.box_w = wind(root, text = "Корпуса")
         self.sch_w = wind(root, text = "Схемы")
@@ -114,6 +116,10 @@ class programm:
         self.setts.grid(0, 3, 1, 1, N + S + W + E)
         self.status = basic(root, Label, text = "Not connected...", bg = 'grey')
         self.status.grid(1, 3, 7, 1, N + S + W + E)
+    def closing(self):      #закртыие соединения при закрытии окна
+        if (conn):
+            conn.close()
+        main_w.destroy()
 
 class auth_w(wind):
     def __init__(self, parent, **sets):     #инициализация окна авторизации
@@ -125,7 +131,7 @@ class auth_w(wind):
         self.entry_log = basic(self, Entry, width = 30)
         self.entry_pass = basic(self, Entry, width = 30, show = "*")
         self.butt_ok = basic(self, Button, text = "Ок", width = 8, command = lambda: self.try_auth())
-        self.butt_cancel = basic(self, Button, text = "Отмена", width = 8, command = lambda: main_w.destroy())
+        self.butt_cancel = basic(self, Button, text = "Отмена", width = 8, command = lambda: main.closing())
         self.note.grid(1, 1, 3, 1, N + S + W + E)
         self.entry_log.grid(1, 2, 3, 1, N + S + W + E)
         self.entry_pass.grid(1, 4, 3, 1, N + S + W + E)
@@ -140,6 +146,7 @@ class auth_w(wind):
             conn = connect(dbname = "Prices", user = self.login, password = self.passw, port = "5432")
             status_now = 1
             main.status.upd(text = "Connected as {}".format(self.login))
+            conn.set_session(autocommit = True)
             self.grab_release()
             self.check_conn()
             self.closing()
@@ -170,28 +177,38 @@ class mat_w(wind):
         self.tree_m_u.size(3, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
             text_2 = "Цена", width_2 = 80, minwidth_2 = 80, stretch_2 = NO, \
                 text_3 = "Дата", width_3 = 80, minwidth_3 = 80, stretch_3 = NO)
-        self.tree_m_gr.grid(0, 1, 2, 1, N + S + W + E)
-        self.tree_m_u.grid(3, 1, 5, 1, N + S + W + E)
+        self.status_separ = basic(self, tk.Separator, orient = HORIZONTAL)
+        self.status_bar = basic(self, Label, text = "-")
+        self.tree_m_gr.grid(0, 1, 4, 1, N + S + W + E)
+        self.tree_m_u.grid(5, 1, 6, 1, N + S + W + E)
+        self.status_separ.grid(0, 4, 12, 1, N + S + W + E)
+        self.status_bar.grid(0, 5, 12, 1, N + S + W + E)
         self.tree_m_gr.tree.bind('<ButtonRelease-1>', lambda event: self.fill_unit(self.tree_m_gr.tree.focus()))
+        self.tree_m_gr.tree.bind('<Double-Button-1>', lambda event: self.edit_gr(self.tree_m_gr.tree.focus()))
     def add_fields_gr(self):     #создание полей добавления групп
         self.entry_m_gr = basic(self, Entry)
-        self.button_m_gr = basic(self, Button, text = "+")
-        self.entry_m_gr.grid(0, 2, 1, 1)
-        self.button_m_gr.grid(1, 2, 1, 1, N + S + W + E)
+        self.button_m_gr = basic(self, Button, text = "+", command = lambda: self.add_gr_write())
+        self.entry_m_gr.grid(2, 2, 1, 1)
+        self.button_m_gr.grid(3, 2, 1, 1, N + S + W + E)
     def add_fields_u(self):     #создание полей добавление материалов
-        self.m_gr = [a[0] for a in self.m_gr]
         self.entry_m_u_gr = basic(self, tk.Combobox, values = self.m_gr, width = 22, state = 'readonly')
         self.entry_m_u_gr.new_wid.current(0)
         self.entry_m_u_name = basic(self, Entry)
-        self.entry_m_u_price = basic(self, Entry)
+        self.entry_m_u_price = basic(self, Entry, width = 13)
         self.entry_m_u_measure = basic(self, tk.Combobox, values = ['шт', 'кг', 'л'], width = 5, state = 'readonly')
         self.entry_m_u_measure.new_wid.current(0)
-        self.button_m_u = basic(self, Button, text = "+")
-        self.entry_m_u_gr.grid(3, 2, 1, 1)
-        self.entry_m_u_name.grid(4, 2, 1, 1)
-        self.entry_m_u_price.grid(5, 2, 1, 1)
-        self.entry_m_u_measure.grid(6, 2, 1, 1)
-        self.button_m_u.grid(7, 2, 1, 1)
+        self.button_m_u = basic(self, Button, text = "+", command = lambda: self.add_u_write())
+        self.entry_m_u_producer = basic(self, Entry)
+        self.label_m_u_help = basic(self, Label, text = "Типовое:")
+        self.check_m_u_typical = basic(self, Checkbutton)
+        self.entry_m_u_gr.grid(5, 2, 1, 1)
+        self.entry_m_u_name.grid(6, 2, 1, 1)
+        self.entry_m_u_price.grid(7, 2, 2, 1)
+        self.entry_m_u_measure.grid(9, 2, 1, 1)
+        self.button_m_u.grid(10, 2, 1, 1)
+        self.entry_m_u_producer.grid(6, 3, 1, 1)
+        self.label_m_u_help.grid(7, 3, 1, 1)
+        self.check_m_u_typical.grid(8, 3, 1, 1)
     def fill(self):     #заполнение дерева группы материалов
         self.tree_m_gr.tree.delete(*self.tree_m_gr.tree.get_children())
         self.tree_m_gr.tree.insert(parent = '', iid = "Все", index = 0, values = "Все")
@@ -199,7 +216,7 @@ class mat_w(wind):
         self.cur = conn.cursor()
         self.cur.execute("SELECT name FROM material_group ORDER BY name;")
         self.m_gr = self.cur.fetchall()
-        print(self.m_gr)
+        self.m_gr = [a[0] for a in self.m_gr]
         for a in self.m_gr:
             self.tree_m_gr.tree.insert(parent = '', iid = a, index = i, values = a)
             i += 1
@@ -208,24 +225,58 @@ class mat_w(wind):
         self.tree_m_u.tree.delete(*self.tree_m_u.tree.get_children())
         i = 0
         self.cur = conn.cursor()
-        #if group.find('{') != -1:   #удаление символов { и }, если название группы состоит из нескольких слов
-        #    group = group.replace('{', '')
-        #    group = group.replace('}', '')
-        print(group)
         if group == "Все":
-            self.cur.execute("SELECT №, name, price FROM material_unit ORDER BY name")
+            self.cur.execute("SELECT №, name, price, upddate FROM material_unit ORDER BY name")
         else:
-            self.cur.execute("SELECT №, name, price FROM material_unit WHERE group_name = %s ORDER BY name", (group,))
+            self.cur.execute("SELECT №, name, price, upddate FROM material_unit WHERE group_name = %s ORDER BY name", (group,))
         self.m_u = self.cur.fetchall()
-        for a, b, c in self.m_u:
-            self.tree_m_u.tree.insert(parent = '', index = i, iid = a, values = (b, c))
+        for a, b, c, d in self.m_u:
+            self.tree_m_u.tree.insert(parent = '', index = i, iid = a, values = (b, c, d))
             i += 1
         self.cur.close()
+    def add_gr_write(self):       #добавление группы
+        self.to_add_gr = self.entry_m_gr.new_wid.get()
+        self.cur = conn.cursor()
+        try:
+            self.cur.execute("INSERT INTO material_group(name) VALUES (%s)", (self.to_add_gr,))
+            self.status_bar.upd(text = "Новая группа добавлена")
+        except:
+            self.status_bar.upd(text = "Ошибка записи новой группы")
+        self.cur.close()
+        self.fill()
+    def add_u_write(self):        #добавление материала !!!!!
+        pass
+    def edit_gr(self, group):      #изменение/удаление группы !!!!!
+        self.entry_m_gr.new_wid.delete(0, "end")
+        self.entry_m_gr.new_wid.insert(0, group)
+        self.button_m_gr.upd(text = "Upd", command = lambda: self.edit_gr_write()) 
+        self.button_m_gr_del = basic(self, Button, text = "DEL", command = lambda: self.del_gr(group))
+        self.button_m_gr_close_edit = basic(self, Button, text ="x", command = lambda: self.edit_gr_close())
+        self.button_m_gr_close_edit.grid(0, 2, 1, 1)
+        self.button_m_gr_del.grid(1, 2, 1, 1)
+    def edit_gr_write(self):        #изменение группы - запись результата в бд !!!!!
+        pass
+    def del_gr(self, group):        #удаление группы !!!!!
+        self.check_del_gr = messagebox.askokcancel(title = 'Удаление группы', message = 'Удалить группу {}? Все вложенные записи также будут удалены'.format(group), icon = messagebox.WARNING)
+        if self.check_del_gr == TRUE:
+            pass    #добавить сюда процесс удаления группы + обновление дерева !!!!!
+        else:
+            return
+        print('pidoras')
+    def edit_gr_close(self):        #изменение группы - закрытие (открытие добавления группы)
+        self.entry_m_gr.new_wid.delete(0, "end")
+        self.button_m_gr.upd(text = "+", command = lambda: self.add_gr_write())
+        self.button_m_gr_close_edit.new_wid.grid_forget()
+        self.button_m_gr_del.new_wid.grid_forget()
+    def edit_u(self):       #изменение/удаление материала !!!!!
+        pass
     def reopen(self):   #открытие окна материалов по нажатию кнопки в главном окне
         self.open()
         self.fill()
-        self.add_fields_gr()
-        self.add_fields_u()
+        self.status_bar.upd(text = "-")
+        if role == 1:
+            self.add_fields_gr()
+            self.add_fields_u()
 
 #def connection():
 #    global conn, status
