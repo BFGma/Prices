@@ -10,6 +10,7 @@ role = 1
 
 class basic(Widget):
     def __init__(self, parent, w_type, **sets):     #создание класса виджетов
+        w_type.__init__(self, parent)
         self.parent = parent
         self.status = 0
         self.type = w_type
@@ -101,7 +102,7 @@ class programm:
         root.geometry('590x220+{}+{}'.format((root.winfo_screenwidth() // 2 - 300), (root.winfo_screenheight() // 2 - 100)))
         root.protocol("WN_DELETE_WINDOW", self.closing)
         self.mat_w = mat_w(root, text = "Материалы", close = lambda: mat_w.close(self.mat_w))
-        self.box_w = wind(root, text = "Корпуса")
+        self.box_w = box_w(root, text = "Корпуса")
         self.sch_w = wind(root, text = "Схемы")
         self.auth_w = auth_w(root, text = "Авторизация", close = lambda: root.destroy())
         self.sett_w = wind(root, text = "Настройки")
@@ -171,7 +172,9 @@ class auth_w(wind):
 class mat_w(wind):
     def __init__(self, parent, **sets):     #инициализация окна материалов
         self.mat_w = wind.__init__(self, parent, **sets)
-        self.tree_m_gr = trees(self, columns = "Name")
+        self.widgets()
+    def widgets(self):      #виджеты
+        self.tree_m_gr = trees(self, columns = "Name", height = 20)
         self.tree_m_u = trees(self, columns = ("Name", "Price", "Date"))
         self.tree_m_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
         self.tree_m_u.size(3, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
@@ -197,7 +200,7 @@ class mat_w(wind):
         self.entry_m_u_gr.new_wid.current(0)
         self.entry_m_u_name = basic(self, Entry)
         self.entry_m_u_price = basic(self, Entry, width = 13)
-        self.entry_m_u_measure = basic(self, tk.Combobox, values = ['шт', 'кг', 'л'], width = 5, state = 'readonly')
+        self.entry_m_u_measure = basic(self, tk.Combobox, values = ['шт', 'кг', 'л', 'м'], width = 5, state = 'readonly')
         self.entry_m_u_measure.new_wid.current(0)
         self.button_m_u = basic(self, Button, text = "+", command = lambda: self.add_u_write())
         self.entry_m_u_producer = basic(self, Entry)
@@ -272,7 +275,7 @@ class mat_w(wind):
         except:
             self.status_bar.upd(text = "Ошибка изменения группы {}".format(group))
     def del_gr(self, group):        #удаление группы
-        self.check_del_gr = messagebox.askokcancel(title = 'Удаление группы', message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(group), icon = messagebox.WARNING)
+        self.check_del_gr = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(group), icon = messagebox.WARNING)
         if self.check_del_gr == TRUE:
             self.cur = conn.cursor()
             try:
@@ -339,7 +342,7 @@ class mat_w(wind):
         except:
             self.status_bar.upd(text = "Ошибка изменения материала")
     def del_u(self,unit):      #удаление материала 
-        self.check_del_u = messagebox.askokcancel(title = 'Удаление материала', message = 'Удалить материал?', icon = messagebox.WARNING)
+        self.check_del_u = messagebox.askokcancel(title = 'Удаление материала', parent = self, message = 'Удалить материал?', icon = messagebox.WARNING)
         if self.check_del_u == TRUE:
             self.cur = conn.cursor()
             try:
@@ -378,9 +381,68 @@ class mat_w(wind):
         if self.fields_u_status == 'Edit':
             self.edit_u_close()
 
-#def connection():
-#    global conn, status
+class box_w(wind):
+    def __init__(self, parent, **sets):
+        self.box_w = wind.__init__(self,parent, **sets)
+        self.widgets_frame()
+    def widgets_frame(self):        #создание фрэймов
+        self.frame_box_gr = basic(self, tk.Frame)
+        self.frame_box = basic(self, tk.Frame)
+        self.frame_box_info = basic(self, tk.Frame)
+        self.frame_box_det = basic(self, tk.Labelframe, text = "Детали")
+        self.frame_box_mat = basic(self, tk.Labelframe, text = "Стандартные материалы")
+        self.frame_box_mat_choose = basic(self, tk.Frame)
+        self.frame_box_status = basic(self, tk.Frame)
+        self.frame_box_gr_fill(self.frame_box_gr)
+        self.frame_box_fill(self.frame_box)
+        self.frame_box_info_fill(self.frame_box_info)
+        self.frame_box_det_fill(self.frame_box_det)
+        self.frame_box_mat_fill(self.frame_box_mat)
+        self.frame_box_mat_choose_fill(self.frame_box_mat_choose)
+        self.frame_box_status_fill(self.frame_box_status)
+        self.frame_box_gr.grid(0, 1, 1, 3)
+        self.frame_box.grid(1, 1, 1, 3)
+        self.frame_box_info.grid(2, 1, 1, 1)
+        self.frame_box_det.grid(2, 2, 1, 1)
+        self.frame_box_mat.grid(2, 3, 1, 1)
+        self.frame_box_mat_choose.grid(3, 1, 1, 1)
+        self.frame_box_status.grid(0, 4, 4, 1)
+    def frame_box_gr_fill(self, frame):     #виджеты - группы корпусов !!!!!
+        self.tree_box_gr = trees(frame.new_wid, columns = "Name", height = 30)
+        self.tree_box_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
+        self.tree_box_gr.grid(0, 0, 1, 1, N + S + W + E)
+    def frame_box_fill(self, frame):        #виджеты - корпуса !!!!!
+        self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
+        self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
+        self.tree_box.grid(0, 0, 1, 1, N + S + W + E)
+    def frame_box_info_fill(self, frame):       #виджеты - инфо о корпусе !!!!!
+        pass
+    def frame_box_det_fill(self, frame):        #виджеты - детали в корпусе !!!!!
+        pass
+    def frame_box_mat_fill(self, frame):        #виджеты - материалы в корпусе !!!!!
+        pass
+    def frame_box_mat_choose_fill(self, frame):     #виджеты - выбор материала !!!!!
+        pass
+    def frame_box_status_fill(self, frame):     #виджеты - статус
+        self.status_bar = basic(frame.new_wid, Label, text = "-")
+        self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
+
+
+def _onKeyRelease(event):       #добавление эвентов на русской раскладке (ctrl+a, ctrl+v, ctrl+x, ctrl+c)
+    ctrl  = (event.state & 0x4) != 0
+    if event.keycode==88 and ctrl and event.keysym.lower() != "x": 
+        event.widget.event_generate("<<Cut>>")
+
+    if event.keycode==86 and ctrl and event.keysym.lower() != "v": 
+        event.widget.event_generate("<<Paste>>")
+
+    if event.keycode==67 and ctrl and event.keysym.lower() != "c":
+        event.widget.event_generate("<<Copy>>")
+    
+    if event.keycode==65 and ctrl and event.keysym.lower() != "a": 
+        event.widget.event_generate("<<SelectAll>>")
 
 main_w = Tk()
+main_w.bind_all("<Key>", _onKeyRelease, "+")
 main = programm(main_w)
 main_w.mainloop()
