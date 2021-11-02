@@ -434,25 +434,44 @@ class box_w(wind):
         self.frame_info_note.grid(0, 2, 2, 1)
     def frame_box_det_fill(self, frame):        #виджеты - детали в корпусе !!!!!
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
-        self.detail_label_1 = basic(self.frame_detail_top.new_wid, tk.Label, text = "№")
-        self.detail_label_2 = basic(self.frame_detail_top.new_wid, tk.Label, text = "Назв.")
-        self.detail_label_3 = basic(self.frame_detail_top.new_wid, tk.Label, text = "Мат.")
-        self.detail_label_4 = basic(self.frame_detail_top.new_wid, tk.Label, text = "Вес")
-        self.detail_label_5 = basic(self.frame_detail_top.new_wid, tk.Label, text = "S1")
-        self.detail_label_6 = basic(self.frame_detail_top.new_wid, tk.Label, text = "S2")
-        self.detail_label_7 = basic(self.frame_detail_top.new_wid, tk.Label, text = "S3")
-        self.detail_label_8 = basic(self.frame_detail_top.new_wid, tk.Label, text = "Прим.")
-        self.detail_label_9 = basic(self.frame_detail_top.new_wid, tk.Label, text = "Кол-во")
-        self.detail_label_1.grid(0, 0, 1, 1)
-        self.detail_label_2.grid(1, 0, 1, 1)
-        self.detail_label_3.grid(2, 0, 1, 1)
-        self.detail_label_4.grid(3, 0, 1, 1)
-        self.detail_label_5.grid(4, 0, 1, 1)
-        self.detail_label_6.grid(5, 0, 1, 1)
-        self.detail_label_7.grid(6, 0, 1, 1)
-        self.detail_label_8.grid(7, 0, 1, 1)
-        self.detail_label_9.grid(8, 0, 1, 1)
+        self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
+        i = 0
+        self.detail_top = []
+        for a, b in self.detail_top_names:
+            self.detail_top.append(basic(self.frame_detail_top.new_wid, tk.Entry, width = b))
+            self.detail_top[i].new_wid.insert(0, a)
+            self.detail_top[i].new_wid.config(state = DISABLED)
+            self.detail_top[i].grid(i, 0, 1, 1)
+            i += 1
         self.frame_detail_top.grid(0, 0, 1, 1)
+        a = 10 #здесь будет количество созданных деталей
+        i = 0 #счетчик
+        self.detail_frame = [] #массив для каждой детали
+        self.detail_fields = [] #массив для параметров каждой детали
+        while i < a:
+            self.detail_fields.append([])
+            self.detail_frame.append(basic(frame.new_wid, tk.Frame))
+            self.detail_frame[i].grid(0, i + 1, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
+            self.detail_fields[i][0].new_wid.insert(0, i + 1)
+            self.detail_fields[i][0].grid(0, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
+            self.detail_fields[i][1].grid(1, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
+            self.detail_fields[i][2].grid(2, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
+            self.detail_fields[i][3].grid(3, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
+            self.detail_fields[i][4].grid(4, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
+            self.detail_fields[i][5].grid(5, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
+            self.detail_fields[i][6].grid(6, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
+            self.detail_fields[i][7].grid(7, 0, 1, 1)
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 6))
+            self.detail_fields[i][8].grid(8, 0, 1, 1)
+            i += 1
     def frame_box_mat_fill(self, frame):        #виджеты - материалы в корпусе !!!!!
         pass
     def frame_box_mat_choose_fill(self, frame):     #виджеты - выбор материала !!!!!
@@ -460,7 +479,6 @@ class box_w(wind):
     def frame_box_status_fill(self, frame):     #виджеты - статус
         self.status_bar = basic(frame.new_wid, Label, text = "-")
         self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
-
 
 def _onKeyRelease(event):       #добавление эвентов на русской раскладке (ctrl+a, ctrl+v, ctrl+x, ctrl+c)
     ctrl  = (event.state & 0x4) != 0
