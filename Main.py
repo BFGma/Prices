@@ -109,7 +109,7 @@ class programm:
         wind.table(root, "r", 0, 20, "r", 1, 30, "r", 2, 20, "c", 0, 20, "c", 1, 50, "c", 2, 20, "c", 3, 50, "c", 4, 20, "c", 5, 50, "c", 6, 20)
         self.mat_w_open = basic(root, Button, text = "Материалы", command = lambda: self.mat_w.reopen(), width = 10)
         self.mat_w_open.grid(1, 1, 1, 1, N + S + W + E)
-        self.box_w_open = basic(root, Button, text = "Корпуса", command = lambda: self.box_w.open(), width = 10)
+        self.box_w_open = basic(root, Button, text = "Корпуса", command = lambda: self.box_w.reopen(), width = 10)
         self.box_w_open.grid(3, 1, 1, 1, N + S + W + E)
         self.sch_w_open = basic(root, Button, text = "Схемы", command = lambda: self.sch_w.open(), width = 10)
         self.sch_w_open.grid(5, 1, 1, 1, N + S + W + E)
@@ -228,6 +228,7 @@ class mat_w(wind):
             i += 1
         self.cur.close()
     def fill_unit(self, group):     #заполнение дерева материалов
+        print(group)
         self.tree_m_u.tree.delete(*self.tree_m_u.tree.get_children())
         i = 0
         self.cur = conn.cursor()
@@ -384,6 +385,7 @@ class mat_w(wind):
 class box_w(wind):
     def __init__(self, parent, **sets):
         self.box_w = wind.__init__(self,parent, **sets)
+        self.box_gr_opened = ''
         self.widgets_frame()
     def widgets_frame(self):        #создание фрэймов
         self.frame_box_gr = basic(self, tk.Frame)
@@ -410,14 +412,45 @@ class box_w(wind):
     def frame_box_gr_fill(self, frame):     #виджеты - группы корпусов !!!!!
         self.tree_box_gr = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
+        self.butt_box_gr = basic(frame.new_wid, tk.Button, text = "Добавить")
         self.tree_box_gr.grid(0, 0, 1, 1, N + S + W + E)
+        self.butt_box_gr.grid(0, 1, 1, 1, N + S + W + E)
+        self.tree_box_gr.tree.bind('<ButtonRelease-1>', lambda event: self.tree_box_fill(self.tree_box_gr.tree.focus()))
+    def tree_box_gr_fill(self):
+        self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
+        i = 0
+        self.cur = conn.cursor()
+        self.cur.execute("SELECT name FROM product_group ORDER BY name")
+        self.box_gr = self.cur.fetchall()
+        for a in self.box_gr:
+            self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a[0], ))
+            i += 1
+        self.cur.close()
     def frame_box_fill(self, frame):        #виджеты - корпуса !!!!!
         self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
+        self.butt_box = basic(frame.new_wid, tk.Button, text = "Добавить")
         self.tree_box.grid(0, 0, 1, 1, N + S + W + E)
+        self.butt_box.grid(0, 1, 1, 1, N + S + W + E)
+        self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus()))
+    def tree_box_fill(self, group):
+        if self.box_gr_opened == group:
+            return
+        self.box_gr_opened = group
+        self.tree_box.tree.delete(*self.tree_box.tree.get_children())
+        i = 0
+        self.cur = conn.cursor()
+        if group[-1] == '}' and group[0] == '{':
+            group = (group[:-1])[1:]
+        self.cur.execute("SELECT name FROM product_box WHERE group_name = %s ORDER BY name", (group,))
+        self.box = self.cur.fetchall()
+        for a in self.box:
+            self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
+            i += 1
+        self.cur.close()
     def frame_box_info_fill(self, frame):       #виджеты - инфо о корпусе !!!!!
         self.frame_info_gr = basic(frame.new_wid, tk.Labelframe, text = "Группа:")
-        self.info_gr = basic(self.frame_info_gr.new_wid, tk.Combobox, values = ['wut', 'wutwut'], state = 'readonly')
+        self.info_gr = basic(self.frame_info_gr.new_wid, tk.Combobox, state = 'readonly')
         self.frame_info_name = basic(frame.new_wid, tk.Labelframe, text = "Название:")
         self.info_name = basic(self.frame_info_name.new_wid, tk.Entry)
         self.frame_info_size = basic(frame.new_wid, tk.Labelframe, text = "Размер:")
@@ -434,15 +467,29 @@ class box_w(wind):
         self.frame_info_note.grid(0, 2, 2, 1)
     def frame_box_det_fill(self, frame):        #виджеты - детали в корпусе !!!!!
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
-        self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
-        i = 0
-        self.detail_top = []
+        self.detail_top_names = [["№", 20], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
         for a, b in self.detail_top_names:
-            self.detail_top.append(basic(self.frame_detail_top.new_wid, tk.Entry, width = b))
-            self.detail_top[i].new_wid.insert(0, a)
-            self.detail_top[i].new_wid.config(state = DISABLED)
-            self.detail_top[i].grid(i, 0, 1, 1)
-            i += 1
+            print(a, b)
+        self.detail_label_1 = basic(self.frame_detail_top.new_wid, tk.Entry, width = 3)
+        self.detail_label_1.new_wid.insert(0, "№")
+        self.detail_label_1.new_wid.config(state = DISABLED)
+        self.detail_label_2 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Назв.", width = 20)
+        self.detail_label_3 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Мат.", width = 20)
+        self.detail_label_4 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Вес", width = 3)
+        self.detail_label_5 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "S1", width = 3)
+        self.detail_label_6 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "S2", width = 3)
+        self.detail_label_7 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "S3", width = 3)
+        self.detail_label_8 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Прим.", width = 20)
+        self.detail_label_9 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "К-во", width = 6)
+        self.detail_label_1.grid(0, 0, 1, 1)
+        self.detail_label_2.grid(1, 0, 1, 1)
+        self.detail_label_3.grid(2, 0, 1, 1)
+        self.detail_label_4.grid(3, 0, 1, 1)
+        self.detail_label_5.grid(4, 0, 1, 1)
+        self.detail_label_6.grid(5, 0, 1, 1)
+        self.detail_label_7.grid(6, 0, 1, 1)
+        self.detail_label_8.grid(7, 0, 1, 1)
+        self.detail_label_9.grid(8, 0, 1, 1)
         self.frame_detail_top.grid(0, 0, 1, 1)
         a = 10 #здесь будет количество созданных деталей
         i = 0 #счетчик
@@ -474,11 +521,18 @@ class box_w(wind):
             i += 1
     def frame_box_mat_fill(self, frame):        #виджеты - материалы в корпусе !!!!!
         pass
+    def box_info_fill(self, box):
+        print('suka')
+        pass
     def frame_box_mat_choose_fill(self, frame):     #виджеты - выбор материала !!!!!
         pass
     def frame_box_status_fill(self, frame):     #виджеты - статус
         self.status_bar = basic(frame.new_wid, Label, text = "-")
         self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
+    def reopen(self):   #открытие окна материалов по нажатию кнопки в главном окне
+        self.open()
+        self.tree_box_gr_fill()
+        self.status_bar.upd(text = "-")
 
 def _onKeyRelease(event):       #добавление эвентов на русской раскладке (ctrl+a, ctrl+v, ctrl+x, ctrl+c)
     ctrl  = (event.state & 0x4) != 0
