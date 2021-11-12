@@ -432,7 +432,7 @@ class box_w(wind):
         self.butt_box = basic(frame.new_wid, tk.Button, text = "Добавить")
         self.tree_box.grid(0, 0, 1, 1, N + S + W + E)
         self.butt_box.grid(0, 1, 1, 1, N + S + W + E)
-        self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus()))
+        self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus(), self.box_gr_opened))
     def tree_box_fill(self, group):
         if self.box_gr_opened == group:
             return
@@ -467,29 +467,15 @@ class box_w(wind):
         self.frame_info_note.grid(0, 2, 2, 1)
     def frame_box_det_fill(self, frame):        #виджеты - детали в корпусе !!!!!
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
-        self.detail_top_names = [["№", 20], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
+        self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
+        i = 0
+        self.detai_label = []
         for a, b in self.detail_top_names:
-            print(a, b)
-        self.detail_label_1 = basic(self.frame_detail_top.new_wid, tk.Entry, width = 3)
-        self.detail_label_1.new_wid.insert(0, "№")
-        self.detail_label_1.new_wid.config(state = DISABLED)
-        self.detail_label_2 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Назв.", width = 20)
-        self.detail_label_3 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Мат.", width = 20)
-        self.detail_label_4 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Вес", width = 3)
-        self.detail_label_5 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "S1", width = 3)
-        self.detail_label_6 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "S2", width = 3)
-        self.detail_label_7 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "S3", width = 3)
-        self.detail_label_8 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "Прим.", width = 20)
-        self.detail_label_9 = basic(self.frame_detail_top.new_wid, tk.Entry, text = "К-во", width = 6)
-        self.detail_label_1.grid(0, 0, 1, 1)
-        self.detail_label_2.grid(1, 0, 1, 1)
-        self.detail_label_3.grid(2, 0, 1, 1)
-        self.detail_label_4.grid(3, 0, 1, 1)
-        self.detail_label_5.grid(4, 0, 1, 1)
-        self.detail_label_6.grid(5, 0, 1, 1)
-        self.detail_label_7.grid(6, 0, 1, 1)
-        self.detail_label_8.grid(7, 0, 1, 1)
-        self.detail_label_9.grid(8, 0, 1, 1)
+            self.detai_label.append(basic(self.frame_detail_top.new_wid, tk.Entry, width = b))
+            self.detai_label[i].new_wid.insert(0, a)
+            self.detai_label[i].new_wid.config(state = DISABLED)
+            self.detai_label[i].grid(i, 0, 1, 1)
+            i += 1
         self.frame_detail_top.grid(0, 0, 1, 1)
         a = 10 #здесь будет количество созданных деталей
         i = 0 #счетчик
@@ -521,8 +507,25 @@ class box_w(wind):
             i += 1
     def frame_box_mat_fill(self, frame):        #виджеты - материалы в корпусе !!!!!
         pass
-    def box_info_fill(self, box):
-        print('suka')
+    def box_info_fill(self, box, box_gr):       #вставка информации по нажатию на бокс
+        if box == '':
+            return
+        if box[-1] == '}' and box[0] == '{':
+            box = (box[:-1])[1:]
+        if box_gr[-1] == '}' and box_gr[0] == '{':
+            box_gr = (box_gr[:-1])[1:]
+        self.cur = conn.cursor()
+        self.cur.execute("SELECT size, notes, price, code FROM product_box WHERE name = '{}' AND group_name = '{}'".format(box, box_gr))
+        self.box_info = self.cur.fetchall()
+        self.cur.close()
+        self.info_gr.new_wid.set(box_gr)
+        self.info_name.new_wid.delete(0, "end")
+        self.info_name.new_wid.insert(0, box)
+        self.info_size.new_wid.delete(0, "end")
+        self.info_size.new_wid.insert(0, self.box_info[0][0])
+        self.info_note.new_wid.delete('1.0', "end")
+        self.info_note.new_wid.insert('1.0', self.box_info[0][1])
+        print(self.box_info[0][3])
         pass
     def frame_box_mat_choose_fill(self, frame):     #виджеты - выбор материала !!!!!
         pass
