@@ -466,6 +466,7 @@ class box_w(wind):
         self.frame_info_size.grid(1, 1, 1, 1)
         self.frame_info_note.grid(0, 2, 2, 1)
     def frame_box_det_fill(self, frame):        #виджеты - детали в корпусе !!!!!
+
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
         self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
         i = 0
@@ -490,7 +491,8 @@ class box_w(wind):
             self.detail_fields[i][0].grid(0, 0, 1, 1)
             self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
             self.detail_fields[i][1].grid(1, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
+            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Combobox, values = ["Сталь 0.8мм", "Сталь 1мм", "Сталь 1мм(Оц)", "Сталь 1.5мм", "Сталь 2мм", "Сталь 2мм(Оц)", \
+                "Сталь 3мм(рифл)", "Сталь 5мм"], width = 17))
             self.detail_fields[i][2].grid(2, 0, 1, 1)
             self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
             self.detail_fields[i][3].grid(3, 0, 1, 1)
@@ -536,6 +538,32 @@ class box_w(wind):
         self.open()
         self.tree_box_gr_fill()
         self.status_bar.upd(text = "-")
+
+class change_mat_gr_w(wind):
+    def __init__(self, parent, **sets):
+        self.change_w = wind.__init__(self,parent, **sets)
+    def reopen(self, type, to_change=''):
+        self.choose_type(type, to_change)
+        self.open()
+    def choose_type(self, type, to_change):
+        if type == 'add':
+            self.add_fields()
+        elif type == 'change':
+            self.change_fields(to_change)
+        else:
+            print("В вызове редактирования материалов что-то не так!!")
+
+class change_mat_w(wind):
+    def __init__(self, parent, **sets):
+        self.change_w = wind.__init__(self,parent, **sets)
+        self.add_fields()
+
+class change_box_w(wind):
+    def __init__(self, parent, **sets):
+        self.change_w = wind.__init__(self,parent, **sets)
+        self.add_fields()
+    def reopen(self, to_add):
+        self.open()
 
 def _onKeyRelease(event):       #добавление эвентов на русской раскладке (ctrl+a, ctrl+v, ctrl+x, ctrl+c)
     ctrl  = (event.state & 0x4) != 0
