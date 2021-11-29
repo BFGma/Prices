@@ -387,7 +387,7 @@ class box_w(wind):
         self.box_w = wind.__init__(self,parent, **sets)
         self.box_gr_opened = ''
         self.widgets_frame()
-    def widgets_frame(self):        #создание фрэймов
+    def widgets_frame(self):                    #создание фрэймов
         self.frame_box_gr = basic(self, tk.Frame)
         self.frame_box = basic(self, tk.Frame)
         self.frame_box_info = basic(self, tk.Frame)
@@ -400,23 +400,26 @@ class box_w(wind):
         self.frame_box_info_fill(self.frame_box_info)
         self.frame_box_det_fill(self.frame_box_det)
         self.frame_box_mat_fill(self.frame_box_mat)
-        self.frame_box_mat_choose_fill(self.frame_box_mat_choose)
         self.frame_box_status_fill(self.frame_box_status)
         self.frame_box_gr.grid(0, 1, 1, 3)
         self.frame_box.grid(1, 1, 1, 3)
         self.frame_box_info.grid(2, 1, 1, 1)
         self.frame_box_det.grid(2, 2, 1, 1)
         self.frame_box_mat.grid(2, 3, 1, 1)
-        self.frame_box_mat_choose.grid(3, 1, 1, 1)
-        self.frame_box_status.grid(0, 4, 4, 1)
-    def frame_box_gr_fill(self, frame):     #виджеты - группы корпусов !!!!!
+        self.frame_box_status.grid(0, 4, 3, 1)
+    def frame_box_gr_fill(self, frame):         #виджеты фрейма_1 (группы)
         self.tree_box_gr = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
-        self.butt_box_gr = basic(frame.new_wid, tk.Button, text = "Добавить")
+        self.butt_box_gr = basic(frame.new_wid, tk.Button, text = "Добавить", command = lambda: self.add_box_gr())
+        self.popup_menu = Menu(self, tearoff = 0)
+        self.popup_menu.add_command(label = "Удалить", command = lambda: self.del_box_gr(self.chosed))
+        self.popup_menu.add_command(label = "Изменить", command = lambda: self.add_box_gr(self.chosed))
+        self.popup_menu.add_command(label = "Добавить", command = lambda: self.add_box_gr())
         self.tree_box_gr.grid(0, 0, 1, 1, N + S + W + E)
         self.butt_box_gr.grid(0, 1, 1, 1, N + S + W + E)
         self.tree_box_gr.tree.bind('<ButtonRelease-1>', lambda event: self.tree_box_fill(self.tree_box_gr.tree.focus()))
-    def tree_box_gr_fill(self):
+        self.tree_box_gr.tree.bind('<Button-3>', self.box_gr_popup)
+    def tree_box_gr_fill(self):                 #заполение фрейма_1
         self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
         i = 0
         self.cur = conn.cursor()
@@ -426,14 +429,75 @@ class box_w(wind):
             self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a[0], ))
             i += 1
         self.cur.close()
-    def frame_box_fill(self, frame):        #виджеты - корпуса !!!!!
+    def box_gr_popup(self, event):              #вып. меню для д1
+        self.chosed = self.tree_box_gr.tree.identify_row(event.y)
+        if self.chosed:
+            self.tree_box_gr.tree.selection_set(self.chosed)
+            self.popup_menu.tk_popup(event.x_root, event.y_root)
+    def add_box_gr(self, edit = None):                       #добавление через add_1 (группы) UNDONE
+        try:
+            if self.add_box_gr_status == 1:
+                return
+        except:
+            pass
+        self.add_box_gr_w = Toplevel(self)
+        self.add_box_gr_status = 1
+        if edit:
+            self.add_box_gr_w.title('Изменение группы')
+        else:
+            self.add_box_gr_w.title('Добавление группы')
+        self.add_box_gr_w.resizable(0, 0)
+        self.add_box_gr_w.grab_set()
+        self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30)
+        self.add_box_gr_cancel = basic(self.add_box_gr_w, tk.Button, width = 10, text = "Отмена", command = lambda: self.add_box_gr_close())
+        if edit:
+            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit())
+        else:
+            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Добавить", command = lambda: self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
+        self.add_box_gr_entry.grid(1, 1, 3, 1, N + S + W + E)
+        self.add_box_gr_cancel.grid(1, 3, 1, 1, N + S + W + E)
+        self.add_box_gr_ok.grid(3, 3, 1, 1, N + S + W + E)
+        self.add_box_gr_w.columnconfigure(0, minsize = 20)
+        self.add_box_gr_w.columnconfigure(2, minsize = 60)
+        self.add_box_gr_w.columnconfigure(4, minsize = 20)
+        self.add_box_gr_w.rowconfigure(0, minsize=20)
+        self.add_box_gr_w.rowconfigure(2, minsize=20)
+        self.add_box_gr_w.rowconfigure(4, minsize=20)
+        self.add_box_gr_w.protocol("WM_DELETE_WINDOW", self.add_box_gr_close)
+    def add_box_gr_close(self):                 #закрытие окна добавления
+        self.add_box_gr_status = 0
+        self.add_box_gr_w.grab_release()
+        self.add_box_gr_w.destroy()
+    def del_box_gr(self, target):               #удаление из д1
+        if target[-1] == '}' and target[0] == '{':
+            target = (target[:-1])[1:]
+        self.del_check1 = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(target), icon = messagebox.WARNING)
+        if self.del_check1 == TRUE:
+            self.cur = conn.cursor()
+            try:
+                self.cur.execute("DELETE FROM product_group WHERE name = '{}'".format(target))
+                self.cur.close()
+                self.status_bar.upd(text = "Удалена группа {}".format(target))
+                self.tree_box_gr_fill()
+            except:
+                self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
+    def add_box_gr_add(self, target):
+        self.cur = conn.cursor()
+        try:
+            self.cur.execute("INSERT INTO product_group(name) VALUES ('{}')".format(target))
+            self.cur.close()
+            self.status_bar.upd(text = "Добавлена группа {}".format(target))
+            self.tree_box_gr_fill()
+        except:
+            self.status_bar.upd(text = "Ошибка добавления группы {}".format(target))
+    def frame_box_fill(self, frame):            #виджеты фрейма_2 (корпуса)
         self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
         self.butt_box = basic(frame.new_wid, tk.Button, text = "Добавить")
         self.tree_box.grid(0, 0, 1, 1, N + S + W + E)
         self.butt_box.grid(0, 1, 1, 1, N + S + W + E)
         self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus(), self.box_gr_opened))
-    def tree_box_fill(self, group):
+    def tree_box_fill(self, group):             #заполнение фрейма_2
         if self.box_gr_opened == group:
             return
         self.box_gr_opened = group
@@ -448,7 +512,7 @@ class box_w(wind):
             self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
             i += 1
         self.cur.close()
-    def frame_box_info_fill(self, frame):       #виджеты - инфо о корпусе !!!!!
+    def frame_box_info_fill(self, frame):       #виджеты фрейма_3 (информация)
         self.frame_info_gr = basic(frame.new_wid, tk.Labelframe, text = "Группа:")
         self.info_gr = basic(self.frame_info_gr.new_wid, tk.Combobox, state = 'readonly')
         self.frame_info_name = basic(frame.new_wid, tk.Labelframe, text = "Название:")
@@ -465,7 +529,7 @@ class box_w(wind):
         self.frame_info_name.grid(1, 0, 1, 1)
         self.frame_info_size.grid(1, 1, 1, 1)
         self.frame_info_note.grid(0, 2, 2, 1)
-    def frame_box_det_fill(self, frame):        #виджеты - детали в корпусе !!!!!
+    def frame_box_det_fill(self, frame):        #виджеты фрейма_4 (детали)
 
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
         self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
@@ -507,9 +571,9 @@ class box_w(wind):
             self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 6))
             self.detail_fields[i][8].grid(8, 0, 1, 1)
             i += 1
-    def frame_box_mat_fill(self, frame):        #виджеты - материалы в корпусе !!!!!
+    def frame_box_mat_fill(self, frame):        #виджеты фрейма_5 (материалы) UNDONE
         pass
-    def box_info_fill(self, box, box_gr):       #вставка информации по нажатию на бокс
+    def box_info_fill(self, box, box_gr):       #заполение фрейма_3
         if box == '':
             return
         if box[-1] == '}' and box[0] == '{':
@@ -524,14 +588,17 @@ class box_w(wind):
         self.info_name.new_wid.delete(0, "end")
         self.info_name.new_wid.insert(0, box)
         self.info_size.new_wid.delete(0, "end")
-        self.info_size.new_wid.insert(0, self.box_info[0][0])
+        try:
+            self.info_size.new_wid.insert(0, self.box_info[0][0])
+        except:
+            pass
         self.info_note.new_wid.delete('1.0', "end")
-        self.info_note.new_wid.insert('1.0', self.box_info[0][1])
+        try:
+            self.info_note.new_wid.insert('1.0', self.box_info[0][1])
+        except:
+            pass
         print(self.box_info[0][3])
-        pass
-    def frame_box_mat_choose_fill(self, frame):     #виджеты - выбор материала !!!!!
-        pass
-    def frame_box_status_fill(self, frame):     #виджеты - статус
+    def frame_box_status_fill(self, frame):     #виджеты фрейма_статус
         self.status_bar = basic(frame.new_wid, Label, text = "-")
         self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
     def reopen(self):   #открытие окна материалов по нажатию кнопки в главном окне
