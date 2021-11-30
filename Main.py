@@ -448,10 +448,17 @@ class box_w(wind):
             self.add_box_gr_w.title('Добавление группы')
         self.add_box_gr_w.resizable(0, 0)
         self.add_box_gr_w.grab_set()
-        self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30)
+        if edit:
+            if edit[-1] == '}' and edit[0] == '{':
+                edit = (edit[:-1])[1:]
+            self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30, text = edit)
+            self.add_box_gr_entry.new_wid.delete(0, "end")
+            self.add_box_gr_entry.new_wid.insert(0, edit)
+        else:
+            self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30)
         self.add_box_gr_cancel = basic(self.add_box_gr_w, tk.Button, width = 10, text = "Отмена", command = lambda: self.add_box_gr_close())
         if edit:
-            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit())
+            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), edit))
         else:
             self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Добавить", command = lambda: self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
         self.add_box_gr_entry.grid(1, 1, 3, 1, N + S + W + E)
@@ -463,6 +470,10 @@ class box_w(wind):
         self.add_box_gr_w.rowconfigure(0, minsize=20)
         self.add_box_gr_w.rowconfigure(2, minsize=20)
         self.add_box_gr_w.rowconfigure(4, minsize=20)
+        if edit:
+            self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), edit))
+        else:
+            self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
         self.add_box_gr_w.protocol("WM_DELETE_WINDOW", self.add_box_gr_close)
     def add_box_gr_close(self):                 #закрытие окна добавления
         self.add_box_gr_status = 0
@@ -481,7 +492,7 @@ class box_w(wind):
                 self.tree_box_gr_fill()
             except:
                 self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
-    def add_box_gr_add(self, target):
+    def add_box_gr_add(self, target):           #добавление строки д1
         self.cur = conn.cursor()
         try:
             self.cur.execute("INSERT INTO product_group(name) VALUES ('{}')".format(target))
@@ -490,6 +501,19 @@ class box_w(wind):
             self.tree_box_gr_fill()
         except:
             self.status_bar.upd(text = "Ошибка добавления группы {}".format(target))
+    def add_box_gr_edit(self, edited, target):          #изменение строки д1
+        if target[-1] == '}' and target[0] == '{':
+            target = (target[:-1])[1:]
+        self.cur = conn.cursor()
+        try:
+            self.cur.execute("UPDATE product_group SET name = '{}' where NAME = '{}'".format(edited, target))
+            self.cur.close()
+            self.status_bar.upd(text = "Группа {} переименована в {}".format(target, edited))
+            self.tree_box_gr_fill()
+            self.add_box_gr_close()
+            self.add_box_gr(edited)
+        except:
+            self.status_bar.upd(text = "Ошибка изменения группы {}".format(target))
     def frame_box_fill(self, frame):            #виджеты фрейма_2 (корпуса)
         self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
