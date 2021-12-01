@@ -387,7 +387,7 @@ class box_w(wind):
         self.box_w = wind.__init__(self,parent, **sets)
         self.box_gr_opened = ''
         self.widgets_frame()
-    def widgets_frame(self):                    #создание фрэймов
+    def widgets_frame(self):                                #создание фрэймов
         self.frame_box_gr = basic(self, tk.Frame)
         self.frame_box = basic(self, tk.Frame)
         self.frame_box_info = basic(self, tk.Frame)
@@ -407,7 +407,7 @@ class box_w(wind):
         self.frame_box_det.grid(2, 2, 1, 1)
         self.frame_box_mat.grid(2, 3, 1, 1)
         self.frame_box_status.grid(0, 4, 3, 1)
-    def frame_box_gr_fill(self, frame):         #виджеты фрейма_1 (группы)
+    def frame_box_gr_fill(self, frame):                     #виджеты фрейма_1 (группы)
         self.tree_box_gr = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
         self.butt_box_gr = basic(frame.new_wid, tk.Button, text = "Добавить", command = lambda: self.add_box_gr())
@@ -419,7 +419,7 @@ class box_w(wind):
         self.butt_box_gr.grid(0, 1, 1, 1, N + S + W + E)
         self.tree_box_gr.tree.bind('<ButtonRelease-1>', lambda event: self.tree_box_fill(self.tree_box_gr.tree.focus()))
         self.tree_box_gr.tree.bind('<Button-3>', self.box_gr_popup)
-    def tree_box_gr_fill(self):                 #заполение фрейма_1
+    def tree_box_gr_fill(self):                             #заполение фрейма_1
         self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
         i = 0
         self.cur = conn.cursor()
@@ -429,12 +429,12 @@ class box_w(wind):
             self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a[0], ))
             i += 1
         self.cur.close()
-    def box_gr_popup(self, event):              #вып. меню для д1
+    def box_gr_popup(self, event):                          #вып. меню для д1
         self.chosed = self.tree_box_gr.tree.identify_row(event.y)
         if self.chosed:
             self.tree_box_gr.tree.selection_set(self.chosed)
             self.popup_menu.tk_popup(event.x_root, event.y_root)
-    def add_box_gr(self, edit = None):                       #добавление через add_1 (группы) UNDONE
+    def add_box_gr(self, edit = None):                      #добавление через add_1 (группы) UNDONE
         try:
             if self.add_box_gr_status == 1:
                 return
@@ -475,11 +475,11 @@ class box_w(wind):
         else:
             self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
         self.add_box_gr_w.protocol("WM_DELETE_WINDOW", self.add_box_gr_close)
-    def add_box_gr_close(self):                 #закрытие окна добавления
+    def add_box_gr_close(self):                             #закрытие окна добавления
         self.add_box_gr_status = 0
         self.add_box_gr_w.grab_release()
         self.add_box_gr_w.destroy()
-    def del_box_gr(self, target):               #удаление из д1
+    def del_box_gr(self, target):                           #удаление из д1
         if target[-1] == '}' and target[0] == '{':
             target = (target[:-1])[1:]
         self.del_check1 = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(target), icon = messagebox.WARNING)
@@ -492,7 +492,7 @@ class box_w(wind):
                 self.tree_box_gr_fill()
             except:
                 self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
-    def add_box_gr_add(self, target):           #добавление строки д1
+    def add_box_gr_add(self, target):                       #добавление строки д1
         self.cur = conn.cursor()
         try:
             self.cur.execute("INSERT INTO product_group(name) VALUES ('{}')".format(target))
@@ -501,7 +501,7 @@ class box_w(wind):
             self.tree_box_gr_fill()
         except:
             self.status_bar.upd(text = "Ошибка добавления группы {}".format(target))
-    def add_box_gr_edit(self, edited, target):          #изменение строки д1
+    def add_box_gr_edit(self, edited, target):              #изменение строки д1
         if target[-1] == '}' and target[0] == '{':
             target = (target[:-1])[1:]
         self.cur = conn.cursor()
@@ -514,14 +514,14 @@ class box_w(wind):
             self.add_box_gr(edited)
         except:
             self.status_bar.upd(text = "Ошибка изменения группы {}".format(target))
-    def frame_box_fill(self, frame):            #виджеты фрейма_2 (корпуса)
+    def frame_box_fill(self, frame):                        #виджеты фрейма_2 (корпуса)
         self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
         self.butt_box = basic(frame.new_wid, tk.Button, text = "Добавить")
         self.tree_box.grid(0, 0, 1, 1, N + S + W + E)
         self.butt_box.grid(0, 1, 1, 1, N + S + W + E)
         self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus(), self.box_gr_opened))
-    def tree_box_fill(self, group):             #заполнение фрейма_2
+    def tree_box_fill(self, group):                         #заполнение фрейма_2
         if self.box_gr_opened == group:
             return
         self.box_gr_opened = group
@@ -536,13 +536,16 @@ class box_w(wind):
             self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
             i += 1
         self.cur.close()
-    def frame_box_info_fill(self, frame):       #виджеты фрейма_3 (информация)
+    def frame_box_info_fill(self, frame):                   #виджеты фрейма_3 (информация)
+        self.info_changed_status = 0
         self.frame_info_gr = basic(frame.new_wid, tk.Labelframe, text = "Группа:")
         self.info_gr = basic(self.frame_info_gr.new_wid, tk.Combobox, state = 'readonly')
         self.frame_info_name = basic(frame.new_wid, tk.Labelframe, text = "Название:")
-        self.info_name = basic(self.frame_info_name.new_wid, tk.Entry)
+        self.info_name_value = StringVar()
+        self.info_name = basic(self.frame_info_name.new_wid, tk.Entry, textvariable = self.info_name_value)
         self.frame_info_size = basic(frame.new_wid, tk.Labelframe, text = "Размер:")
-        self.info_size = basic(self.frame_info_size.new_wid, tk.Entry)
+        self.info_size_value = StringVar()
+        self.info_size = basic(self.frame_info_size.new_wid, tk.Entry, textvariable = self.info_size_value)
         self.frame_info_note = basic(frame.new_wid, tk.Labelframe, text = "Описание:")
         self.info_note = basic(self.frame_info_note.new_wid, Text, height = 3, width = 35)
         self.info_gr.grid(0, 0, 1, 1)
@@ -553,7 +556,15 @@ class box_w(wind):
         self.frame_info_name.grid(1, 0, 1, 1)
         self.frame_info_size.grid(1, 1, 1, 1)
         self.frame_info_note.grid(0, 2, 2, 1)
-    def frame_box_det_fill(self, frame):        #виджеты фрейма_4 (детали)
+    def info_changed(self, *args):
+        print(*args)
+        print(self.info_name_value.get())
+        pisya = tk.Style()
+        if self.info_changed_status == 0:
+            pisya.configure('Red.TEntry', foreground = 'red')
+        self.info_changed_status = 1
+        self.info_name.new_wid.configure(style = "Red.TEntry")
+    def frame_box_det_fill(self, frame):                    #виджеты фрейма_4 (детали)
 
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
         self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
@@ -595,9 +606,9 @@ class box_w(wind):
             self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 6))
             self.detail_fields[i][8].grid(8, 0, 1, 1)
             i += 1
-    def frame_box_mat_fill(self, frame):        #виджеты фрейма_5 (материалы) UNDONE
+    def frame_box_mat_fill(self, frame):                    #виджеты фрейма_5 (материалы) UNDONE
         pass
-    def box_info_fill(self, box, box_gr):       #заполение фрейма_3
+    def box_info_fill(self, box, box_gr):                   #заполение фрейма_3
         if box == '':
             return
         if box[-1] == '}' and box[0] == '{':
@@ -609,26 +620,29 @@ class box_w(wind):
         self.box_info = self.cur.fetchall()
         self.cur.close()
         self.info_gr.new_wid.set(box_gr)
-        self.info_name.new_wid.delete(0, "end")
-        self.info_name.new_wid.insert(0, box)
-        self.info_size.new_wid.delete(0, "end")
+        self.info_name_value.set(box)
+        self.info_name_value.trace_add("write", self.info_changed)
+        #self.info_name.new_wid.delete(0, "end")
+        #self.info_name.new_wid.insert(0, box)
         try:
-            self.info_size.new_wid.insert(0, self.box_info[0][0])
+            self.info_size_value.set(self.box_info[0][0])
         except:
             pass
+        self.info_size_value.trace_add("write", self.info_changed)
         self.info_note.new_wid.delete('1.0', "end")
         try:
             self.info_note.new_wid.insert('1.0', self.box_info[0][1])
         except:
             pass
         print(self.box_info[0][3])
-    def frame_box_status_fill(self, frame):     #виджеты фрейма_статус
+    def frame_box_status_fill(self, frame):                 #виджеты фрейма_статус
         self.status_bar = basic(frame.new_wid, Label, text = "-")
         self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
-    def reopen(self):   #открытие окна материалов по нажатию кнопки в главном окне
+    def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
+        if self.status == -1:
+            self.tree_box_gr_fill()
+            self.status_bar.upd(text = "-")
         self.open()
-        self.tree_box_gr_fill()
-        self.status_bar.upd(text = "-")
 
 class change_mat_gr_w(wind):
     def __init__(self, parent, **sets):
