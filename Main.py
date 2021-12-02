@@ -2,13 +2,14 @@
 from tkinter import messagebox
 import tkinter.ttk as tk
 from psycopg2 import *
+from datetime import date
 
 global conn, connection_status
 conn = ()
 connection_status = 0
 
 class basic(Widget):
-    def __init__(self, parent, w_type, **sets):     #создание класса виджетов
+    def __init__(self, parent, w_type, **sets):                         #создание класса виджетов
         w_type.__init__(self, parent)
         self.parent = parent
         self.status = 0
@@ -23,15 +24,15 @@ class basic(Widget):
             return
         self.new_wid.grid(column = col, row = r, columnspan = cols, rowspan = rows, sticky = stick)
         self.status = 1
-    def remove(self):       #скрытие виджетов
+    def remove(self):                                                   #скрытие виджетов
         self.new_wid.grid_remove()
         self.status = 2
-    def upd(self, **sets):      #обновление виджетов
+    def upd(self, **sets):                                              #обновление виджетов
         for a, b in sets.items():
             self.new_wid[a] = b
 
 class trees(tk.Treeview):
-    def __init__(self, parent, **sets):     #создание класса дерева
+    def __init__(self, parent, **sets):                                 #создание класса дерева
         tk.Treeview.__init__(self, parent)
         self.status = 0
         self.tree = tk.Treeview(parent, show = "headings", selectmode = "browse")
@@ -48,34 +49,34 @@ class trees(tk.Treeview):
         self.tree.grid(column = col, row = r, columnspan = cols, rowspan = rows, sticky = stick)
         self.scroll.grid(column = col + cols, row = r, columnspan = 1, rowspan = rows, sticky = N + S)
         self.status = 1
-    def size(self, col_n, **sets):      #определение колонок дерева
+    def size(self, col_n, **sets):                                      #определение колонок дерева
         a = 0
         while a <= col_n:
                 self.tree.heading("#{}".format(a), text = sets.get("text_{}".format(a), ""))
                 self.tree.column("#{}".format(a), minwidth = sets.get("minwidth_{}".format(a), 0), width = sets.get("width_{}".format(a), 100), \
                         stretch = sets.get("stretch_{}".format(a,), "YES"))
                 a += 1
-    def remove(self):       #скрытие дерева
+    def remove(self):                                                   #скрытие дерева
         self.tree.grid_remove()
         self.status = -1
 
 class wind(Tk):
-    def __init__(self, parent = None, **sets):      #создание класса окон
+    def __init__(self, parent = None, **sets):              #создание класса окон
         Toplevel.__init__(self, parent)
         self.title(sets.get('text', ""))
         self.withdraw()
         self.status = -1
         self.resizable(0, 0)
         self.protocol("WM_DELETE_WINDOW", sets.get("close", self.closing))
-    def closing(self):      #процесс закрытия окон по нажатию х
+    def closing(self):                                      #процесс закрытия окон по нажатию х
         self.status = 0
         self.withdraw()
-    def open(self):     #процесс открытия окон при нажатии кнопки в главном окне
+    def open(self):                                         #процесс открытия окон при нажатии кнопки в главном окне
         if self.status == 1:
             return
         self.status = 1
         self.deiconify()
-    def table(self, *sets):     #верстка окна
+    def table(self, *sets):                                 #верстка окна
         test = 0
         cr = 0
         num = 0
@@ -116,7 +117,7 @@ class main:
         self.setts.grid(0, 3, 1, 1, N + S + W + E)
         self.status = basic(root, Label, text = "Not connected...", bg = 'grey')
         self.status.grid(1, 3, 7, 1, N + S + W + E)
-    def close(self):                                      #закртыие соединения при закрытии окна
+    def close(self):                                        #закртыие соединения при закрытии окна
         if (conn):
             conn.close()
         programm.destroy()
@@ -174,24 +175,30 @@ class auth(wind):
 class mat(wind):
     def __init__(self, parent, **sets):                     #инициализация
         self.mat = wind.__init__(self, parent, **sets)
+        self.var()
         self.wid()
     def var(self):                                          #переменные (UND)
-        pass
+        self.f1_wind_status = 0
+        self.f2_wind_status = 0
     def wid(self):                                          #виджеты
         self.f1 = trees(self, columns = "Name", height = 20)
-        self.f2 = trees(self, columns = ("Name", "Price", "Date"))
-        self.f1.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
-        self.f2.size(3, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
+        self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date"))
+        self.f1.size(1, text_1 = "Название группы", width_1 = 220, minwidth_1 = 220, stretch_1 = NO)
+        self.f2.size(5, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
             text_2 = "Цена", width_2 = 80, minwidth_2 = 80, stretch_2 = NO, \
-                text_3 = "Дата", width_3 = 80, minwidth_3 = 80, stretch_3 = NO)
+                text_3 = "Ед", width_3 = 30, minwidth_3 = 80, stretch_3 = NO, \
+                    text_4 = "Произв.", width_4 = 80, minwidth_4 = 80, stretch_4 = NO, \
+                        text_5 = "Дата", width_5 = 80, minwidth_5 = 80, stretch_5 = NO)
         self.status_separ = basic(self, tk.Separator, orient = HORIZONTAL)
         self.status_bar = basic(self, Label, text = "-")
         self.f1_menu()
-        self.f1.grid(0, 1, 4, 1, N + S + W + E)
-        self.f2.grid(5, 1, 8, 1, N + S + W + E)
-        self.status_separ.grid(0, 4, 14, 1, N + S + W + E)
-        self.status_bar.grid(0, 5, 14, 1, N + S + W + E)
-        self.f1.tree.bind('<ButtonRelease-1>', lambda event: self.f2_fill(self.f1.tree.focus()))
+        self.f2_menu()
+        self.f1.grid(0, 1, 1, 1, N + S + W + E)
+        self.f2.grid(2, 1, 1, 1, N + S + W + E)
+        self.status_separ.grid(0, 2, 4, 1, N + S + W + E)
+        self.status_bar.grid(0, 2, 4, 1, N + S + W + E)
+        #self.f1.tree.bind('<ButtonRelease-1>', lambda event: self.f2_fill(self.f1.tree.focus()))
+        self.f1.tree.bind('<ButtonRelease-1>', self.f2_fill)
     def f1_fill(self):                                      #заполнение Д1
         self.f1_drop()
         self.f1.tree.insert(parent = '', iid = "Все", index = 0, values = "Все")
@@ -199,48 +206,216 @@ class mat(wind):
         self.cur = conn.cursor()
         self.cur.execute("SELECT name FROM material_group ORDER BY name;")
         self.m_gr = self.cur.fetchall()
-        self.m_gr = [a[0] for a in self.m_gr]
         for a in self.m_gr:
             self.f1.tree.insert(parent = '', iid = a, index = i, values = a)
             i += 1
         self.cur.close()
-    def f1_drop(self):                                      #очистка Д1 (UND)
+    def f1_drop(self):                                      #очистка Д1
         self.f1.tree.delete(*self.f1.tree.get_children())
-    def f1_menu(self):
+    def f1_menu(self):                                      #выпадающее меню для Д1
         self.f1_popup = Menu(self, tearoff = 0)
         self.f1_popup.add_command(label = "Удалить", command = lambda: self.f1_del(self.f1_target))
         self.f1_popup.add_command(label = "Изменить", command = lambda: self.f1_wind_open(self.f1_target))
         self.f1_popup.add_command(label = "Добавить", command = lambda: self.f1_wind_open())
         self.f1.tree.bind('<Button-3>', self.f1_menu_open)
-    def f1_menu_open(self, event):
+    def f1_menu_open(self, event):                          #открытие меню для Д1
         self.f1_target = self.f1.tree.identify_row(event.y)
         if self.f1_target:
             self.f1.tree.selection_set(self.f1_target)
             self.f1_popup.tk_popup(event.x_root, event.y_root)
-    def f1_wind_open(self, target = None):
-        pass
-    def f1_wind_close(self):
-        pass
-    def f1_add(self):
-        pass
-    def f1_change(self):
-        pass
-    def f1_del(self, target):
-        pass
-    def f2_fill(self, group):                               #заполнение Д2
-        print(group)
-        self.f2.tree.delete(*self.f2.tree.get_children())
+    def f1_wind_open(self, target = ''):                    #открытие окна добавления в Д1
+        if self.f1_wind_status == 1:
+            return
+        self.f1_wind = Toplevel(self)
+        x = programm.winfo_screenwidth()/2
+        y = programm.winfo_screenheight()/2
+        print(x, y)
+        self.f1_wind.geometry('+%d+%d' % (x, y))
+        self.f1_wind_status = 1
+        if target:
+            self.f1_wind.title("Изменение группы")
+        else:
+            self.f1_wind.title("Добавление группы")
+        self.f1_wind.resizable(0, 0)
+        self.f1_wind.grab_set()
+        if target:    
+            if len(target) > 2:
+                if target[-1] == '}' and target [0] == '{':
+                    target = (target[:-1])[1:]
+        self.target = StringVar()
+        self.target.set(target)
+        self.f1_wind_entry = basic(self.f1_wind, tk.Entry, width = 30, textvariable = self.target)
+        self.f1_wind_cancel = basic(self.f1_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f1_wind_close())
+        if target:
+            self.f1_wind_ok = basic(self.f1_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f1_change(self.target.get(), target))
+        else:
+            self.f1_wind_ok = basic(self.f1_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f1_add(self.target.get()))
+        self.f1_wind_entry.grid(1, 1, 3, 1, N + S + W + E)
+        self.f1_wind_cancel.grid(1, 3, 1, 1, N + S + W + E)
+        self.f1_wind_ok.grid(3, 3, 1, 1, N + S + W + E)
+        self.f1_wind.columnconfigure(0, minsize = 20)
+        self.f1_wind.columnconfigure(2, minsize = 60)
+        self.f1_wind.columnconfigure(4, minsize = 20)
+        self.f1_wind.rowconfigure(0, minsize = 20)
+        self.f1_wind.rowconfigure(2, minsize = 20)
+        self.f1_wind.rowconfigure(4, minsize = 20)
+        self.f1_wind.protocol("WM_DELETE_WINDOW", self.f1_wind_close)
+    def f1_wind_close(self):                                #закрытие окна добавления в Д1
+        self.f1_wind_status = 0
+        self.f1_wind.grab_release()
+        self.f1_wind.destroy()
+    def f1_add(self, target):                               #добавление в Д1 
+        try:
+            self.cur = conn.cursor()
+            self.cur.execute("INSERT INTO material_group(name) VALUES ('{}')".format(target))
+            self.cur.close()
+            self.status_bar.upd(text = "Добавлена группа {}".format(target))
+            self.f1_fill()
+        except:
+            self.status_bar.upd(text = "Ошибка добавления группы {}".format(target))
+    def f1_change(self, target, old):                       #изменение в Д1
+        if not target:
+            self.status_bar.upd(text = "Поле не может быть пустым")
+            return
+        if len(target) > 2:
+            if target[-1] == '}' and target[0] == '{':
+                target = (target[:-1])[1:]
+        try:
+            self.cur = conn.cursor()
+            self.cur.execute("UPDATE material_group SET name = '{new}' WHERE name = '{old}'".format(new = target, old = old))
+            self.cur.close()
+            self.status_bar.upd(text = "Группа {old} переименована в {new}".format(old = old, new = target))
+            self.f1_fill()
+            self.f1_wind_close()
+            self.f1_wind_open(target)
+        except:
+            self.status_bar.upd(text = "Ошибка изменения группы {}".format(old))
+    def f1_del(self, target):                               #удаление в Д1 (UND)
+        if len(target) > 2:
+            if target[-1] == '}' and target[0] == '{':
+                target = (target[:-1])[1:]
+        self.f1_del_check = messagebox.askokcancel(title = "Удаление группы", \
+            parent = self, message = \
+                "Удалить группу {}? Все вложенные записи будут перемещены в \"Без группы\""\
+                    .format(target), icon = messagebox.WARNING)
+        if self.f1_del_check == TRUE:
+            try:
+                self.cur = conn.cursor()
+                self.cur.execute("DELETE FROM material_group WHERE name = '{}'".format(target))
+                self.cur.close()
+                self.status_bar.upd(text = "Удалена группа {}".format(target))
+                self.f1_fill()
+            except:
+                self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
+    def f2_fill(self, event):                               #заполнение Д2
+        target = self.f1.tree.identify_row(event.y)
+        if not target:
+            return
+        self.f1.tree.selection_set(target)
+        if len(target) > 2:
+            if target[-1] == '}' and target[0] == '{':
+                target = (target[:-1])[1:]
+        self.f2_drop()
         i = 0
         self.cur = conn.cursor()
-        if group == "Все":
-            self.cur.execute("SELECT №, name, price, upddate FROM material_unit ORDER BY name")
+        if target == "Все":
+            self.cur.execute("SELECT №, name, price, measure, producer, upddate FROM material_unit ORDER BY name")
         else:
-            self.cur.execute("SELECT №, name, price, upddate FROM material_unit WHERE group_name = %s ORDER BY name", (group,))
+            self.cur.execute("SELECT №, name, price, measure, producer, upddate FROM material_unit WHERE group_name = %s ORDER BY name", (target,))
         self.m_u = self.cur.fetchall()
-        for a, b, c, d in self.m_u:
-            self.f2.tree.insert(parent = '', index = i, iid = a, values = (b, c, d))
+        print(self.m_u)
+        for a, b, c, d, e, f in self.m_u:
+            self.f2.tree.insert(parent = '', index = i, iid = a, values = (b, c, d, e, f))
             i += 1
         self.cur.close()
+    def f2_drop(self):                                      #очистка Д2
+        self.f2.tree.delete(*self.f2.tree.get_children())
+    def f2_menu(self):                                      #выпадающее меню для Д2 (UND)
+        self.f2_popup = Menu(self, tearoff = 0)
+        self.f2_popup.add_command(label = "Удалить", command = lambda: self.f2_del(self.f2_target))
+        self.f2_popup.add_command(label = "Изменить", command = lambda: self.f2_wind_open(self.f2_target))
+        self.f2_popup.add_command(label = "Добавить", command = lambda: self.f2_wind_open())
+        self.f2.tree.bind('<Button-3>', self.f2_menu_open)
+    def f2_menu_open(self, event):                          #открытие меню для Д2 (UND)
+        self.f2_target = self.f2.tree.identify_row(event.y)
+        if self.f2_target:
+            self.f2.tree.selection_set(self.f2_target)
+            print(self.f2.tree.item(self.f2_target).get('values'))
+            print(date.today().strftime('%Y-%m-%d'))
+            self.f2_popup.tk_popup(event.x_root, event.y_root)
+    def f2_wind_open(self, target = ''):                    #открытие окна добавления в Д2 (UND)
+        if self.f2_wind_status == 1:
+            return
+        self.f2_wind = Toplevel(self)
+        x = programm.winfo_screenwidth()/2
+        y = programm.winfo_screenheight()/2
+        print(x, y)
+        self.f2_wind.geometry('+%d+%d' % (x, y))
+        self.f2_wind_status = 1
+        if target:
+            target = self.f2.tree.item(self.f2_target).get('values')
+            self.f2_wind.title("Изменение материала")
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(self.target.get(), target))
+        else:
+            target = [[],[],[],[],[]]
+            self.f2_wind.title("Добавление материала")
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f2_add(self.target.get()))
+        self.f2_wind.resizable(0, 0)
+        self.f2_wind.grab_set()
+        #if target:    
+        #    if len(target) > 2:
+        #        if target[-1] == '}' and target [0] == '{':
+        #            target = (target[:-1])[1:]
+        self.target_name = StringVar()
+        self.target_name.set(target[0])
+        self.target_price = StringVar()
+        self.target_price.set(target[1])
+        self.target_meas = StringVar()
+        self.target_meas.set(target[2])
+        self.target_prod = StringVar()
+        self.target_prod.set(target[3])
+        self.target_date = StringVar()
+        self.target_date.set(target[4])
+        self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
+        self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, width = 50, textvariable = self.target_name)
+        self.f2_wind_frame_price = basic(self.f2_wind, tk.Labelframe, text = "Цена:")
+        self.f2_wind_price = basic(self.f2_wind_frame_price.new_wid, tk.Entry, width = 15, textvariable = self.target_price)
+        self.f2_wind_frame_meas = basic(self.f2_wind, tk.Labelframe, text = "Изм.:")
+        self.f2_wind_meas = basic(self.f2_wind_frame_meas.new_wid, tk.Entry, width = 5, textvariable = self.target_meas)
+        self.f2_wind_frame_prod = basic(self.f2_wind, tk.Labelframe, text = "Производитель:")
+        self.f2_wind_prod = basic(self.f2_wind_frame_prod.new_wid, tk.Entry, width = 20, textvariable = self.target_prod)
+        self.f2_wind_frame_date = basic(self.f2_wind, tk.Labelframe, text = "Дата:")
+        self.f2_wind_date = basic(self.f2_wind_frame_date.new_wid, tk.Entry, width = 15, textvariable = self.target_date)
+        self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f2_wind_close())
+        self.f2_wind_frame_name.grid(1, 1, 3, 1)
+        self.f2_wind_name.grid(0, 0, 1, 1)
+        self.f2_wind_frame_price.grid(4, 1, 1, 1)
+        self.f2_wind_price.grid(0, 0, 1, 1)
+        self.f2_wind_frame_meas.grid(5, 1, 1, 1)
+        self.f2_wind_meas.grid(0, 0, 3, 1)
+        self.f2_wind_frame_prod.grid(3, 2, 1, 1)
+        self.f2_wind_prod.grid(0, 0, 3, 1)
+        self.f2_wind_frame_date.grid(4, 2, 1, 1)
+        self.f2_wind_date.grid(0, 0, 3, 1)
+        self.f2_wind_cancel.grid(1, 4, 1, 1)
+        self.f2_wind_ok.grid(5, 4, 1, 1)
+        self.f2_wind.columnconfigure(0, minsize = 20)
+        self.f2_wind.columnconfigure(6, minsize = 20)
+        self.f2_wind.rowconfigure(0, minsize = 20)
+        self.f2_wind.rowconfigure(3, minsize = 20)
+        self.f2_wind.rowconfigure(5, minsize = 20)
+        self.f2_wind.protocol("WM_DELETE_WINDOW", self.f2_wind_close)
+    def f2_wind_close(self):                                #закрытие окна добавления в Д2 (UND)
+        self.f2_wind_status = 0
+        self.f2_wind.grab_release()
+        self.f2_wind.destroy()
+    def f2_add(self, target):                               #добавление в Д2 (UND)
+        pass
+    def f2_change(self, target, old):                       #изменение в Д2 (UND)
+        pass
+    def f2_del(self, target):                               #удаление в Д2 (UND)
+        pass
+
     def add_gr_write(self):                                 #добавление группы
         self.to_add_gr = self.entry_m_gr.new_wid.get()
         self.cur = conn.cursor()
