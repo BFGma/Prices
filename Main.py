@@ -396,7 +396,10 @@ class mat(wind):
         self.target_prod = StringVar()
         self.target_prod.set(target[3])
         self.target_group = StringVar()
-        self.target_group.set(target[5])
+        try:
+            self.target_group.set(target[5])
+        except:
+            self.target_group.set(self.f2_grouptofill)
         #виджеты 
         self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
         self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
