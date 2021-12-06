@@ -182,7 +182,7 @@ class mat(wind):
         self.f2_wind_status = 0
     def wid(self):                                          #виджеты
         self.f1 = trees(self, columns = "Name", height = 20)
-        self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date"))
+        self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date", "Group"), displaycolumns = ("Name", "Price", "Meas", "Prod", "Date"))
         self.f1.size(1, text_1 = "Название группы", width_1 = 220, minwidth_1 = 220, stretch_1 = NO)
         self.f2.size(5, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
             text_2 = "Цена", width_2 = 80, minwidth_2 = 80, stretch_2 = NO, \
@@ -327,12 +327,12 @@ class mat(wind):
         i = 0
         self.cur = conn.cursor()
         if target == "Все":
-            self.cur.execute("SELECT №, name, price, measure, producer, upddate FROM material_unit ORDER BY name")
+            self.cur.execute("SELECT №, name, price, measure, producer, upddate, group_name FROM material_unit ORDER BY name")
         else:
-            self.cur.execute("SELECT №, name, price, measure, producer, upddate FROM material_unit WHERE group_name = %s ORDER BY name", (target,))
+            self.cur.execute("SELECT №, name, price, measure, producer, upddate, group_name FROM material_unit WHERE group_name = %s ORDER BY name", (target,))
         self.m_u = self.cur.fetchall()
-        for a, b, c, d, e, f in self.m_u:
-            self.f2.tree.insert(parent = '', index = i, iid = a, values = (b, c, d, e, f))
+        for a, b, c, d, e, f, g in self.m_u:
+            self.f2.tree.insert(parent = '', index = i, iid = a, values = (b, c, d, e, f, g))
             i += 1
         self.cur.close()
     def f2_drop(self):                                      #очистка Д2
@@ -343,7 +343,7 @@ class mat(wind):
         self.f2_popup.add_command(label = "Изменить", command = lambda: self.f2_wind_open(self.f2_target))
         self.f2_popup.add_command(label = "Добавить", command = lambda: self.f2_wind_open())
         self.f2.tree.bind('<Button-3>', self.f2_menu_open)
-    def f2_menu_empty(self):
+    def f2_menu_empty(self):                                #выпадающее меню для Д2 - только добавление
         self.f2_popup_empty = Menu(self, tearoff = 0)
         self.f2_popup_empty.add_command(label = "Добавить", command = lambda: self.f2_wind_open())
         self.f2.tree.bind('<Button-3>', self.f2_menu_open)
@@ -360,14 +360,16 @@ class mat(wind):
         if self.f2_wind_status == 1:
             return
         self.f2_wind = Toplevel(self)
+        #центровка окна
         x = programm.winfo_screenwidth()/2
         y = programm.winfo_screenheight()/2
         self.f2_wind.geometry('+%d+%d' % (x, y))
         self.f2_wind_status = 1
         if target:
+            target_num = target
             target = self.f2.tree.item(self.f2_target).get('values')
             self.f2_wind.title("Изменение материала")
-            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(target))
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(target, target_num))
         else:
             target = [[],[],[],[],[]]
             self.f2_wind.title("Добавление материала")
@@ -380,7 +382,6 @@ class mat(wind):
         #            target = (target[:-1])[1:]
         i = 0
         self.target_group_choose = self.m_gr.copy()
-        print(self.m_gr)
         for a in self.target_group_choose:
             self.target_group_choose[i] = self.target_group_choose[i][0]
             i += 1
@@ -395,10 +396,8 @@ class mat(wind):
         self.target_prod = StringVar()
         self.target_prod.set(target[3])
         self.target_group = StringVar()
-        try:
-            self.target_group.set(self.f2_grouptofill)
-        except:
-            pass
+        self.target_group.set(target[5])
+        #виджеты 
         self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
         self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
         self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, width = 50, textvariable = self.target_name)
@@ -415,6 +414,7 @@ class mat(wind):
         self.f2_wind_group = basic(self.f2_wind_frame_group.new_wid, tk.Combobox, width = 30, state = 'readonly', textvariable = self.target_group, \
             values = self.target_group_choose)
         self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f2_wind_close())
+        #расстановка виджетов
         self.f2_wind_status_text.grid(1, 1, 6, 1)
         self.f2_wind_frame_name.grid(1, 2, 3, 1)
         self.f2_wind_name.grid(0, 0, 1, 1)
@@ -428,29 +428,30 @@ class mat(wind):
         self.f2_wind_group.grid(0, 0, 3, 1)
         self.f2_wind_cancel.grid(1, 5, 1, 1)
         self.f2_wind_ok.grid(5, 5, 1, 1)
+        #обрамление 
         self.f2_wind.columnconfigure(0, minsize = 20)
         self.f2_wind.columnconfigure(6, minsize = 20)
         self.f2_wind.rowconfigure(0, minsize = 20)
         self.f2_wind.rowconfigure(3, minsize = 20)
         self.f2_wind.rowconfigure(5, minsize = 20)
         self.f2_wind.protocol("WM_DELETE_WINDOW", self.f2_wind_close)
-    def f2_wind_validate(self, value):
+    def f2_wind_validate(self, value):                      #проверка введенных данных в Д2
         if value:
             try:
                 float(value)
-                self.wind_status_text.set('ne suka')
+                self.wind_status_text.set('')
                 return True
             except ValueError:
-                self.wind_status_text.set('suka')
+                self.wind_status_text.set('Неверные символы')
                 return False
         else:
-            self.wind_status_text.set('pusto suka')
-            return True
+            self.wind_status_text.set('Цена не может быть пустой')
+            return False
     def f2_wind_close(self):                                #закрытие окна добавления в Д2 (UND)
         self.f2_wind_status = 0
         self.f2_wind.grab_release()
         self.f2_wind.destroy()
-    def f2_add(self):                               #добавление в Д2 (UND)
+    def f2_add(self):                                       #добавление в Д2 (UND)
         try:
             if not self.target_price.get():
                 self.target_price.set(0)
@@ -465,9 +466,24 @@ class mat(wind):
             self.f2_wind_close()
             self.f2_wind_open()
         except:
-            self.status_bar.upd(text = "Ошибка добавления группы {}".format(self.target_name.get()))
-    def f2_change(self, target, old):                       #изменение в Д2 (UND)
-        pass
+            self.status_bar.upd(text = "Ошибка добавления материала {}".format(self.target_name.get()))
+    def f2_change(self, old_target, old_num):                        #изменение в Д2 (UND)
+        try:
+            if not self.target_price.get():
+                self.target_price.set(0)
+            self.cur = conn.cursor()
+            self.cur.execute("UPDATE material_unit SET name = '{name}', group_name \
+                = '{gr_name}', price = {price}, measure = '{meas}', producer = '{prod}', \
+                    upddate = '{date}' WHERE № = {num}".format(name = self.target_name.get(), \
+                        gr_name = self.target_group.get(), price = self.target_price.get(), meas = self.target_meas.get(), \
+                            prod = self.target_prod.get(), date = date.today().strftime('%Y-%m-%d'), num = old_num))
+            self.cur.close()
+            self.status_bar.upd(text = "Изменен материал {}".format(old_target[0]))
+            self.f2_fill()
+            self.f2_wind_close()
+            #self.f2_wind_open(old_num)
+        except:
+            self.status_bar.upd(text = "Ошибка изменения материала {}".format(old_target[0]))
     def f2_del(self, target):                               #удаление в Д2 (UND)
         print(target)
         if target:
@@ -897,7 +913,7 @@ class change_box_w(wind):
     def reopen(self, to_add):
         self.open()
 
-def _onKeyRelease(event):       #добавление эвентов на русской раскладке (ctrl+a, ctrl+v, ctrl+x, ctrl+c)
+def _onKeyRelease(event):                                   #добавление эвентов на русской раскладке (ctrl+a, ctrl+v, ctrl+x, ctrl+c)
     ctrl  = (event.state & 0x4) != 0
     if event.keycode==88 and ctrl and event.keysym.lower() != "x": 
         event.widget.event_generate("<<Cut>>")
