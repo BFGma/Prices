@@ -172,12 +172,13 @@ class auth(wind):
             self.grab_set()
         self.after(10000, self.check)
         
-class mat(wind):
+class mat(wind):                                        #Закончено: -добавить автоопределение группы при добавлении материала
     def __init__(self, parent, **sets):                     #инициализация
         self.mat = wind.__init__(self, parent, **sets)
         self.var()
         self.wid()
     def var(self):                                          #переменные (UND)
+        self.wind_status = 0
         self.f1_wind_status = 0
         self.f2_wind_status = 0
     def wid(self):                                          #виджеты
@@ -308,7 +309,7 @@ class mat(wind):
                 self.f1_fill()
             except:
                 self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
-    def f2_fill(self, event = None):                               #заполнение Д2
+    def f2_fill(self, event = None):                        #заполнение Д2
         if event:
             target = self.f1.tree.identify_row(event.y)
         else:
@@ -351,8 +352,6 @@ class mat(wind):
         self.f2_target = self.f2.tree.identify_row(event.y)
         if self.f2_target:
             self.f2.tree.selection_set(self.f2_target)
-            #print(self.f2.tree.item(self.f2_target).get('values'))
-            #print(date.today().strftime('%Y-%m-%d'))
             self.f2_popup.tk_popup(event.x_root, event.y_root)
         else:
             self.f2_popup_empty.tk_popup(event.x_root, event.y_root)
@@ -371,7 +370,7 @@ class mat(wind):
             self.f2_wind.title("Изменение материала")
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(target, target_num))
         else:
-            target = [[],[],[],[],[]]
+            target = [[],[],[],[],[],[]]
             self.f2_wind.title("Добавление материала")
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f2_add())
         self.f2_wind.resizable(0, 0)
@@ -467,7 +466,7 @@ class mat(wind):
             self.f2_wind_open()
         except:
             self.status_bar.upd(text = "Ошибка добавления материала {}".format(self.target_name.get()))
-    def f2_change(self, old_target, old_num):                        #изменение в Д2 (UND)
+    def f2_change(self, old_target, old_num):               #изменение в Д2 (UND)
         try:
             if not self.target_price.get():
                 self.target_price.set(0)
@@ -485,141 +484,27 @@ class mat(wind):
         except:
             self.status_bar.upd(text = "Ошибка изменения материала {}".format(old_target[0]))
     def f2_del(self, target):                               #удаление в Д2 (UND)
-        print(target)
         if target:
-            target = self.f2.tree.item(self.f2_target).get('values')
-        print(target)
-
-    # def add_gr_write(self):                                 #добавление группы
-    #     self.to_add_gr = self.entry_m_gr.new_wid.get()
-    #     self.cur = conn.cursor()
-    #     try:
-    #         self.cur.execute("INSERT INTO material_group(name) VALUES (%s)", (self.to_add_gr,))
-    #         self.status_bar.upd(text = "Новая группа добавлена")
-    #     except:
-    #         self.status_bar.upd(text = "Ошибка записи новой группы")
-    #     self.cur.close()
-    #     self.f1_fill()
-    #     self.entry_m_u_gr.upd(values = self.m_gr)
-    # def edit_gr(self, group):                               #изменение/удаление группы
-    #     if self.fields_gr_status == 'Edit':
-    #         self.edit_gr_close()
-    #     self.entry_m_gr.new_wid.delete(0, "end")
-    #     self.entry_m_gr.new_wid.insert(0, group)
-    #     self.button_m_gr.upd(text = "Upd", command = lambda: self.edit_gr_write(group)) 
-    #     self.button_m_gr_del = basic(self, tk.Button, text = "DEL", width = 3, command = lambda: self.del_gr(group))
-    #     self.button_m_gr_close_edit = basic(self, Button, text ="x", command = lambda: self.edit_gr_close())
-    #     self.button_m_gr_close_edit.grid(0, 2, 1, 1)
-    #     self.button_m_gr_del.grid(1, 2, 1, 1)
-    #     self.fields_gr_status = 'Edit'
-    # def edit_gr_write(self,group):                          #изменение группы - запись результата в бд
-    #     self.to_upd_gr = self.entry_m_gr.new_wid.get()
-    #     self.cur = conn.cursor()
-    #     try:
-    #         self.cur.execute("UPDATE material_group SET name = '{new_name}' where name = '{name}'".format(new_name = self.to_upd_gr, name = group))
-    #         self.cur.close()
-    #         self.status_bar.upd(text = "Группа {name} переименована в {new_name}".format(name = group, new_name = self.to_upd_gr))
-    #         self.f1_fill()
-    #         self.entry_m_u_gr.upd(values = self.m_gr)
-    #         self.entry_m_gr.new_wid.delete(0, "end")
-    #     except:
-    #         self.status_bar.upd(text = "Ошибка изменения группы {}".format(group))
-    # def del_gr(self, group):                                #удаление группы
-    #     self.check_del_gr = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(group), icon = messagebox.WARNING)
-    #     if self.check_del_gr == TRUE:
-    #         self.cur = conn.cursor()
-    #         try:
-    #             self.cur.execute("DELETE FROM material_group WHERE name = '{}'".format(group))
-    #             self.cur.close()
-    #             self.status_bar.upd(text = "Удалена группа {}".format(group))
-    #             self.f1_fill()
-    #             self.entry_m_u_gr.upd(values = self.m_gr)
-    #             self.entry_m_gr.new_wid.delete(0, "end")
-    #         except:
-    #             self.status_bar.upd(text = "Ошибка удаления группы {}".format(group))
-    # def edit_gr_close(self):                                #изменение группы - закрытие (открытие добавления группы)
-    #     self.entry_m_gr.new_wid.delete(0, "end")
-    #     self.button_m_gr.upd(text = "+", command = lambda: self.add_gr_write())
-    #     self.button_m_gr_close_edit.new_wid.grid_forget()
-    #     self.button_m_gr_del.new_wid.grid_forget()
-    #     self.fields_gr_status = 'Add'
-    # def add_u_write(self):                                  #добавление материала
-    #     self.cur = conn.cursor()
-    #     try:
-    #         self.cur.execute("INSERT INTO material_unit(group_name, name, price, measure, producer) values('{group_name}', '{name}', {price}, '{meas}', '{prod}')"\
-    #             .format(group_name = self.entry_m_u_gr.new_wid.get(), name = self.entry_m_u_name.new_wid.get(), price = self.entry_m_u_price.new_wid.get(), \
-    #                 meas = self.entry_m_u_measure.new_wid.get(), prod = self.entry_m_u_producer.new_wid.get()))
-    #         self.status_bar.upd(text = "Новый материал добавлен")
-    #     except:
-    #         self.status_bar.upd(text = "Ошибка добавления нового материала")
-    #     self.cur.close()
-    #     self.f2_fill(self.f1.tree.focus())
-    # def edit_u(self, unit):                                 #изменение/удаление материала - сюда передается № выбранного материала
-    #     if self.fields_u_status == 'Edit':
-    #         self.edit_u_close()
-    #     self.cur = conn.cursor()
-    #     self.cur.execute("SELECT group_name, name, price, measure, producer, typical, upddate FROM material_unit WHERE № = {}".format(unit))
-    #     self.u_to_edit = self.cur.fetchall()
-    #     self.cur.close()
-    #     self.entry_m_u_measure.new_wid.set(self.u_to_edit[0][3])
-    #     self.entry_m_u_gr.new_wid.set(self.u_to_edit[0][0])
-    #     self.entry_m_u_name.new_wid.delete(0, "end")
-    #     self.entry_m_u_name.new_wid.insert(0, self.u_to_edit[0][1])
-    #     self.entry_m_u_price.new_wid.delete(0, "end")
-    #     self.entry_m_u_price.new_wid.insert(0, self.u_to_edit[0][2])
-    #     self.entry_m_u_producer.new_wid.delete(0,"end")
-    #     self.entry_m_u_producer.new_wid.insert(0,self.u_to_edit[0][4])
-    #     self.button_m_u_del = basic(self, Button, text = "DEL", command = lambda: self.del_u(unit))
-    #     self.button_m_u_close_edit = basic(self, Button, text = "x", command = lambda: self.edit_u_close())
-    #     self.button_m_u_del.grid(6, 2, 1, 1)
-    #     self.button_m_u_close_edit.grid(5, 2, 1, 1)
-    #     self.button_m_u.upd(text = "Upd", command = lambda: self.edit_u_write(unit))
-    #     self.fields_u_status = 'Edit'
-    # def edit_u_write(self, unit):                           #изменение материала - запись результата в бд
-    #     self.cur = conn.cursor()
-    #     try:
-    #         self.cur.execute("UPDATE material_unit SET group_name = '{group_name}', name = '{name}', price = {price}, producer = '{prod}', measure = '{meas}' WHERE № = {unit}"\
-    #             .format(group_name = self.entry_m_u_gr.new_wid.get(), name = self.entry_m_u_name.new_wid.get(), price = self.entry_m_u_price.new_wid.get(), \
-    #                 meas = self.entry_m_u_measure.new_wid.get(), prod = self.entry_m_u_producer.new_wid.get(), unit = unit))
-    #         self.cur.close()
-    #         self.status_bar.upd(text = "Материал {name} переименован".format(name = self.entry_m_u_name.new_wid.get()))
-    #         self.f2_fill(self.f1.tree.focus())
-    #         self.entry_m_u_producer.new_wid.delete(0, "end")
-    #         self.entry_m_u_name.new_wid.delete(0, "end")
-    #         self.entry_m_u_price.new_wid.delete(0, "end")
-    #         self.entry_m_u_measure.new_wid.current(0)
-    #         self.entry_m_u_gr.new_wid.current(0)
-    #     except:
-    #         self.status_bar.upd(text = "Ошибка изменения материала")
-    # def del_u(self,unit):                                   #удаление материала 
-    #     self.check_del_u = messagebox.askokcancel(title = 'Удаление материала', parent = self, message = 'Удалить материал?', icon = messagebox.WARNING)
-    #     if self.check_del_u == TRUE:
-    #         self.cur = conn.cursor()
-    #         try:
-    #             self.cur.execute("DELETE FROM material_unit WHERE № = {}".format(unit))
-    #             self.cur.close()
-    #             self.status_bar.upd(text = "Удален материал {}".format(unit))
-    #             self.f2_fill(self.f1.tree.focus())
-    #             self.entry_m_u_producer.new_wid.delete(0, "end")
-    #             self.entry_m_u_name.new_wid.delete(0, "end")
-    #             self.entry_m_u_price.new_wid.delete(0, "end")
-    #             self.entry_m_u_measure.new_wid.current(0)
-    #             self.entry_m_u_gr.new_wid.current(0)
-    #         except:
-    #             self.status_bar.upd(text = "Ошибка удаления материала {}".format(unit))
-    # def edit_u_close(self):                                 #изменение материала - закрытие (открытие добавления материала)
-    #     self.entry_m_u_name.new_wid.delete(0, "end")
-    #     self.entry_m_u_price.new_wid.delete(0, "end")
-    #     self.entry_m_u_producer.new_wid.delete(0,"end")
-    #     self.entry_m_u_measure.new_wid.current(0)
-    #     self.entry_m_u_gr.new_wid.current(0)
-    #     self.button_m_u.upd(text = "+", command = lambda: self.add_u_write())
-    #     self.button_m_u_del.new_wid.grid_forget()
-    #     self.button_m_u_close_edit.new_wid.grid_forget()
-    #     self.fields_u_status = 'Add'
+            target_par = self.f2.tree.item(self.f2_target).get('values')
+        self.f2_del_check = \
+            messagebox.askokcancel(title = "Удаление материала", \
+                parent = self, message = "Удалить материал {}?"\
+                    .format(target_par[0]), icon = messagebox.WARNING)
+        if self.f2_del_check == TRUE:
+            try:
+                self.cur = conn.cursor()
+                self.cur.execute("DELETE FROM material_unit WHERE № = {}".format(target))
+                self.cur.close()
+                self.status_bar.upd(text = "Удален материал {}".format(target_par[0]))
+                self.f2_fill()
+                self.f2_wind_close()
+            except:
+                self.status_bar.upd(text = "Ошибка удаления материала {}".format(target_par[0]))
     def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
         self.open()
-        self.f1_fill()
+        if self.wind_status == 0:
+            self.f1_fill()
+            self.wind_status = 1
         self.status_bar.upd(text = "-")
     def close(self):                                        #доп. опции закрытия окна
         self.closing()
@@ -722,6 +607,7 @@ class box_w(wind):
         self.add_box_gr_w.grab_release()
         self.add_box_gr_w.destroy()
     def del_box_gr(self, target):                           #удаление из д1
+        
         if target[-1] == '}' and target[0] == '{':
             target = (target[:-1])[1:]
         self.del_check1 = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(target), icon = messagebox.WARNING)
@@ -807,7 +693,6 @@ class box_w(wind):
         self.info_changed_status = 1
         self.info_name.new_wid.configure(style = "Red.TEntry")
     def frame_box_det_fill(self, frame):                    #виджеты фрейма_4 (детали)
-
         self.frame_detail_top = basic(frame.new_wid, tk.Frame)
         self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
         i = 0
