@@ -1,6 +1,7 @@
 ﻿from tkinter import *
 from tkinter import messagebox
 import tkinter.ttk as tk
+from turtle import onclick
 from psycopg2 import *
 from datetime import date
 
@@ -95,6 +96,26 @@ class wind(Tk):
                 if cr == 'c':
                     self.columnconfigure(num, minsize = ms)
                 test = 0
+
+class TreeEntry(Entry):                                 #Класс для изменения дерева
+    def __init__(self, parent, iid, col, text = "", **kw):
+        super().__init__(parent, **kw)
+        self.field = parent
+        self.iid = iid
+        self.col = col
+        self.insert(0, text)
+        self['exportselection'] = False
+        self.focus_force()
+        self.bind("<Return>", self.on_return)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Escape>", lambda *ignore: self.destroy())
+    def on_return(self, event):
+        print(self.iid, self.col, self.get())
+        self.field.set(self.iid, self.col, value = self.get())
+        self.destroy()
+    def select_all(self, *ignore):
+        self.selection_range(0, 'end')
+        return 'break'
 
 class main:
     def __init__(self, root):                               #инициализация + виджеты
@@ -516,7 +537,12 @@ class box_w(wind):
     def __init__(self, parent, **sets):
         self.box_w = wind.__init__(self,parent, **sets)
         self.box_gr_opened = ''
+        self.var()
         self.widgets_frame()
+    def var(self):
+        self.info = ['suka', 'govno', '', '']
+        self.info_det = [[]]
+        print('qa')
     def widgets_frame(self):                                #создание фрэймов
         self.frame_box_gr = basic(self, tk.Frame)
         self.frame_box = basic(self, tk.Frame)
@@ -696,46 +722,32 @@ class box_w(wind):
         self.info_changed_status = 1
         self.info_name.new_wid.configure(style = "Red.TEntry")
     def frame_box_det_fill(self, frame):                    #виджеты фрейма_4 (детали)
-        self.frame_detail_top = basic(frame.new_wid, tk.Frame)
-        self.detail_top_names = [["№", 3], ["Название", 20], ["Материал", 20], ["Вес", 3], ["S1", 3], ["S2", 3], ["S3", 3], ["Примечание", 20], ["Кол-во", 6]]
-        i = 0
-        self.detai_label = []
-        for a, b in self.detail_top_names:
-            self.detai_label.append(basic(self.frame_detail_top.new_wid, tk.Entry, width = b))
-            self.detai_label[i].new_wid.insert(0, a)
-            self.detai_label[i].new_wid.config(state = DISABLED)
-            self.detai_label[i].grid(i, 0, 1, 1)
+        self.detail_list = trees(frame.new_wid, columns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"), \
+            displaycolumns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"))
+        self.detail_list.size(9, text_1 = "№", width_1 = 30, minwidth_1 = 30, stretch_1 = NO, text_2 = "Название", width_2 = 200, minwidth_2 = 200, \
+            stretch_2 = NO, text_3 = "Материал", width_3 = 200, minwidth_3 = 200, stretch = NO, text_4 = "Вес", width_4 = 30, minwidth_4 = 30, \
+                stretch_4 = NO, text_5 = "S1", width_5 = 30, minwidth_5 = 30, stretch_5 = NO, text_6 = "S2", width_6 = 30, minwidth_6 = 30, \
+                    stretch_6 = NO, text_7 = "S2", width_7 = 30, minwidth_7 = 30, stretch_7 = NO, text_8 = "Примечание", width_8 = 200, minwidth_8 = 200, \
+                        stretch_8 = NO, text_9 = "Кол-во", width_9 = 60, minwidth_9 = 60, stretch_9 = NO)
+        self.detail_list.tree.bind('<Double-Button-1>', lambda event: self.change_field(event))
+        self.detail_list.grid(0, 0, 1, 1)
+        #self.cur = conn.cursor()
+        #self.cur.execute("SELECT name, material, weight, s_primer, s_enamel, s_powderpaint, notes, num FROM product_detail WHERE box_name = {} ORDER BY material, name".format("\'" + \
+        #    self.info[0] + "/" + self.info[1] + "\'"))
+        #self.test = self.cur.fetchall()
+        #self.cur.close()
+        #print(self.text)
+    def frame_box_det_fill_fill(self):
+        self.cur = conn.cursor()
+        self.cur.execute("SELECT name, material, weight, s_primer, s_enamel, s_powderpaint, notes, num FROM product_detail WHERE box_name = {} ORDER BY material, name".format("\'" + \
+            self.info[0] + "/" + self.info[1] + "\'"))
+        self.test = self.cur.fetchall()
+        self.cur.close()
+        i = 1
+        for a, b, c, d, e, f, g, h in self.test:
+            self.detail_list.tree.insert(parent = '', index = i, iid = i, values = (i, a, b, c, d, e, f, g, h))
             i += 1
-        self.frame_detail_top.grid(0, 0, 1, 1)
-        a = 10 #здесь будет количество созданных деталей
-        i = 0 #счетчик
-        self.detail_frame = [] #массив для каждой детали
-        self.detail_fields = [] #массив для параметров каждой детали
-        while i < a:
-            self.detail_fields.append([])
-            self.detail_frame.append(basic(frame.new_wid, tk.Frame))
-            self.detail_frame[i].grid(0, i + 1, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
-            self.detail_fields[i][0].new_wid.insert(0, i + 1)
-            self.detail_fields[i][0].grid(0, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
-            self.detail_fields[i][1].grid(1, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Combobox, values = ["Сталь 0.8мм", "Сталь 1мм", "Сталь 1мм(Оц)", "Сталь 1.5мм", "Сталь 2мм", "Сталь 2мм(Оц)", \
-                "Сталь 3мм(рифл)", "Сталь 5мм"], width = 17))
-            self.detail_fields[i][2].grid(2, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
-            self.detail_fields[i][3].grid(3, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
-            self.detail_fields[i][4].grid(4, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
-            self.detail_fields[i][5].grid(5, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 3))
-            self.detail_fields[i][6].grid(6, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 20))
-            self.detail_fields[i][7].grid(7, 0, 1, 1)
-            self.detail_fields[i].append(basic(self.detail_frame[i].new_wid, tk.Entry, width = 6))
-            self.detail_fields[i][8].grid(8, 0, 1, 1)
-            i += 1
+            print(a)
     def frame_box_mat_fill(self, frame):                    #виджеты фрейма_5 (материалы) UNDONE
         pass
     def box_info_fill(self, box, box_gr):                   #заполение фрейма_3
@@ -743,13 +755,16 @@ class box_w(wind):
             return
         if box[-1] == '}' and box[0] == '{':
             box = (box[:-1])[1:]
-
         if box_gr[-1] == '}' and box_gr[0] == '{':
             box_gr = (box_gr[:-1])[1:]
         self.cur = conn.cursor()
         self.cur.execute("SELECT size, notes, price, code FROM product_box WHERE name = '{}' AND group_name = '{}'".format(box, box_gr))
         self.box_info = self.cur.fetchall()
         self.cur.close()
+        self.info[1] = box
+        self.info[0] = box_gr
+        self.info = [box_gr, box, self.box_info[0][0], self.box_info[0][1]]
+        print(self.info)
         self.info_gr.new_wid.set(box_gr)
         self.info_name_value.set(box)
         self.info_name_value.trace_add("write", self.info_changed)
@@ -765,10 +780,22 @@ class box_w(wind):
             self.info_note.new_wid.insert('1.0', self.box_info[0][1])
         except:
             pass
-        print(self.box_info[0][3])
+        self.frame_box_det_fill_fill()
     def frame_box_status_fill(self, frame):                 #виджеты фрейма_статус
         self.status_bar = basic(frame.new_wid, Label, text = "-")
         self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
+    def change_field(self, event):
+        row = self.detail_list.tree.identify_row(event.y)
+        col = self.detail_list.tree.identify_column(event.x)
+        if row == '':
+            return
+        x, y, width, height = self.detail_list.tree.bbox(row, col)
+        text = self.detail_list.tree.item(row, 'values')
+        print(int(''.join(c for c in col if c.isdigit())))
+        print(text)
+        coltoprint = int(''.join(c for c in col if c.isdigit())) - 1
+        self.entry_popup = TreeEntry(self.detail_list.tree, row, col, text[coltoprint])
+        self.entry_popup.place (x = x, y = y + height // 2, anchor = W, width = width, height = height)
     def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
         if self.status == -1:
             self.tree_box_gr_fill()
