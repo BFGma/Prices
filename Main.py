@@ -1,4 +1,5 @@
-﻿from tkinter import *
+﻿from sqlite3 import enable_shared_cache
+from tkinter import *
 from tkinter import messagebox
 import tkinter.ttk as tk
 from turtle import onclick
@@ -109,6 +110,7 @@ class TreeEntry(Entry):                                 #Класс для из�
         self.bind("<Return>", self.on_return)
         self.bind("<Control-a>", self.select_all)
         self.bind("<Escape>", lambda *ignore: self.destroy())
+        self.bind("<FocusOut>", self.on_return) #???? мб сделать запись в таком случае ????
     def on_return(self, event):
         print(self.iid, self.col, self.get())
         self.field.set(self.iid, self.col, value = self.get())
@@ -120,24 +122,25 @@ class TreeEntry(Entry):                                 #Класс для из�
 class main:
     def __init__(self, root):                               #инициализация + виджеты
         root.title("База данных цен")
-        root.geometry('590x220+{}+{}'.format((root.winfo_screenwidth() // 2 - 300), (root.winfo_screenheight() // 2 - 100)))
+        root.geometry('+{}+{}'.format((root.winfo_screenwidth() // 2 - 295), (root.winfo_screenheight() // 2 - 110)))
         root.protocol("WN_DELETE_WINDOW", self.close)
         self.mat = mat(root, text = "Материалы", close = lambda: mat.close(self.mat))
         self.box_w = box_w(root, text = "Корпуса")
         self.sch_w = wind(root, text = "Схемы")
         self.auth_w = auth(root, text = "Авторизация", close = lambda: root.destroy())
         self.sett_w = wind(root, text = "Настройки")
-        wind.table(root, "r", 0, 20, "r", 1, 30, "r", 2, 20, "c", 0, 20, "c", 1, 50, "c", 2, 20, "c", 3, 50, "c", 4, 20, "c", 5, 50, "c", 6, 20)
+        wind.table(root, "r", 0, 20, "r", 2, 30, "r", 3, 20, "r", 4, 30, "r", 5, 20, "r", 6, 30, "r", 7, 20, \
+            "r", 10, 30, "c", 0, 20, "c", 1, 20, "c", 2, 100, "c", 4, 40)
         self.mat_open = basic(root, Button, text = "Материалы", command = lambda: self.mat.reopen(), width = 10)
-        self.mat_open.grid(1, 1, 1, 1, N + S + W + E)
+        self.mat_open.grid(2, 2, 2, 1, N + S + W + E)
         self.box_w_open = basic(root, Button, text = "Корпуса", command = lambda: self.box_w.reopen(), width = 10)
-        self.box_w_open.grid(3, 1, 1, 1, N + S + W + E)
+        self.box_w_open.grid(2, 4, 2, 1, N + S + W + E)
         self.sch_w_open = basic(root, Button, text = "Схемы", command = lambda: self.sch_w.open(), width = 10)
-        self.sch_w_open.grid(5, 1, 1, 1, N + S + W + E)
+        self.sch_w_open.grid(2, 6, 2, 1, N + S + W + E)
         self.setts = basic(root, Button, bitmap = 'gray12', command = lambda: self.sett_w.open())
-        self.setts.grid(0, 3, 1, 1, N + S + W + E)
-        self.status = basic(root, Label, text = "Not connected...", bg = 'grey')
-        self.status.grid(1, 3, 7, 1, N + S + W + E)
+        self.setts.grid(0, 10, 1, 1, N + S + W + E)
+        self.status = basic(root, Label, text = "Not connected...", bg = '#BABABA')
+        self.status.grid(1, 10, 5, 1, N + S + W + E)
     def close(self):                                        #закртыие соединения при закрытии окна
         if (conn):
             conn.close()
@@ -146,6 +149,7 @@ class main:
 class auth(wind):
     def __init__(self, parent, **sets):                     #инициализация + виджеты
         self.auth_w = wind.__init__(self, parent, **sets)
+        self.geometry('+{}+{}'.format((parent.winfo_screenwidth() // 2 - 110), (parent.winfo_screenheight() // 2 - 80)))
         self.var()
         self.open()
         self.grab_set()
@@ -186,9 +190,9 @@ class auth(wind):
             self.cur.close()
             connection_status = 1
             main_w.status.upd(text = "Connected as {}".format(self.login))
-        except:
+        except Exception as error:
             connection_status = 0
-            main_w.status.upd(text = "Disconnected by server")
+            main_w.status.upd(text = "Disconnected by server: {}".format(error))
             self.open()
             self.grab_set()
         self.after(10000, self.check)
@@ -540,9 +544,8 @@ class box_w(wind):
         self.var()
         self.widgets_frame()
     def var(self):
-        self.info = ['suka', 'govno', '', '']
+        self.info = ['', '', '', '']
         self.info_det = [[]]
-        print('qa')
     def widgets_frame(self):                                #создание фрэймов
         self.frame_box_gr = basic(self, tk.Frame)
         self.frame_box = basic(self, tk.Frame)
@@ -566,13 +569,11 @@ class box_w(wind):
     def frame_box_gr_fill(self, frame):                     #виджеты фрейма_1 (группы)
         self.tree_box_gr = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
-        self.butt_box_gr = basic(frame.new_wid, tk.Button, text = "Добавить", command = lambda: self.add_box_gr())
         self.popup_menu = Menu(self, tearoff = 0)
         self.popup_menu.add_command(label = "Удалить", command = lambda: self.del_box_gr(self.chosed))
         self.popup_menu.add_command(label = "Изменить", command = lambda: self.add_box_gr(self.chosed))
         self.popup_menu.add_command(label = "Добавить", command = lambda: self.add_box_gr())
         self.tree_box_gr.grid(0, 0, 1, 1, N + S + W + E)
-        self.butt_box_gr.grid(0, 1, 1, 1, N + S + W + E)
         self.tree_box_gr.tree.bind('<ButtonRelease-1>', lambda event: self.tree_box_fill(self.tree_box_gr.tree.focus()))
         self.tree_box_gr.tree.bind('<Button-3>', self.box_gr_popup)
     def tree_box_gr_fill(self):                             #заполение фрейма_1
@@ -636,7 +637,6 @@ class box_w(wind):
         self.add_box_gr_w.grab_release()
         self.add_box_gr_w.destroy()
     def del_box_gr(self, target):                           #удаление из д1
-        
         if target[-1] == '}' and target[0] == '{':
             target = (target[:-1])[1:]
         self.del_check1 = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(target), icon = messagebox.WARNING)
@@ -674,9 +674,12 @@ class box_w(wind):
     def frame_box_fill(self, frame):                        #виджеты фрейма_2 (корпуса)
         self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
-        self.butt_box = basic(frame.new_wid, tk.Button, text = "Добавить")
+        self.popup_box_menu = Menu(self, tearoff = 0)
+        self.popup_box_menu.add_command(label = "Удалить", command = lambda: self.del_box(self.chosed_box))
+        self.popup_box_menu.add_command(label = "Изменить", command = lambda: self.add_box(self.chosed_box))
+        self.popup_box_menu.add_command(label = "Добавить", command = lambda: self.add_box())
         self.tree_box.grid(0, 0, 1, 1, N + S + W + E)
-        self.butt_box.grid(0, 1, 1, 1, N + S + W + E)
+        self.tree_box.tree.bind('<Button-3>', self.box_popup)
         self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus(), self.box_gr_opened))
     def tree_box_fill(self, group):                         #заполнение фрейма_2
         if self.box_gr_opened == group:
@@ -693,6 +696,17 @@ class box_w(wind):
             self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
             i += 1
         self.cur.close()
+    def box_popup(self, event):
+        self.chosed_box = self.tree_box.tree.identify_row(event.y)
+        if self.chosed_box:
+            self.popup_box_menu.entryconfigure(0, state = ACTIVE)
+            self.popup_box_menu.entryconfigure(1, state = ACTIVE)
+            self.tree_box.tree.selection_set(self.chosed_box)
+            self.popup_box_menu.tk_popup(event.x_root, event.y_root)
+        else:
+            self.popup_box_menu.entryconfigure(0, state = DISABLED)
+            self.popup_box_menu.entryconfigure(1, state = DISABLED)
+            self.popup_box_menu.tk_popup(event.x_root, event.y_root)
     def frame_box_info_fill(self, frame):                   #виджеты фрейма_3 (информация)
         self.info_changed_status = 0
         self.frame_info_gr = basic(frame.new_wid, tk.Labelframe, text = "Группа:")
@@ -721,35 +735,6 @@ class box_w(wind):
             pisya.configure('Red.TEntry', foreground = 'red')
         self.info_changed_status = 1
         self.info_name.new_wid.configure(style = "Red.TEntry")
-    def frame_box_det_fill(self, frame):                    #виджеты фрейма_4 (детали)
-        self.detail_list = trees(frame.new_wid, columns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"), \
-            displaycolumns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"))
-        self.detail_list.size(9, text_1 = "№", width_1 = 30, minwidth_1 = 30, stretch_1 = NO, text_2 = "Название", width_2 = 200, minwidth_2 = 200, \
-            stretch_2 = NO, text_3 = "Материал", width_3 = 200, minwidth_3 = 200, stretch = NO, text_4 = "Вес", width_4 = 30, minwidth_4 = 30, \
-                stretch_4 = NO, text_5 = "S1", width_5 = 30, minwidth_5 = 30, stretch_5 = NO, text_6 = "S2", width_6 = 30, minwidth_6 = 30, \
-                    stretch_6 = NO, text_7 = "S2", width_7 = 30, minwidth_7 = 30, stretch_7 = NO, text_8 = "Примечание", width_8 = 200, minwidth_8 = 200, \
-                        stretch_8 = NO, text_9 = "Кол-во", width_9 = 60, minwidth_9 = 60, stretch_9 = NO)
-        self.detail_list.tree.bind('<Double-Button-1>', lambda event: self.change_field(event))
-        self.detail_list.grid(0, 0, 1, 1)
-        #self.cur = conn.cursor()
-        #self.cur.execute("SELECT name, material, weight, s_primer, s_enamel, s_powderpaint, notes, num FROM product_detail WHERE box_name = {} ORDER BY material, name".format("\'" + \
-        #    self.info[0] + "/" + self.info[1] + "\'"))
-        #self.test = self.cur.fetchall()
-        #self.cur.close()
-        #print(self.text)
-    def frame_box_det_fill_fill(self):
-        self.cur = conn.cursor()
-        self.cur.execute("SELECT name, material, weight, s_primer, s_enamel, s_powderpaint, notes, num FROM product_detail WHERE box_name = {} ORDER BY material, name".format("\'" + \
-            self.info[0] + "/" + self.info[1] + "\'"))
-        self.test = self.cur.fetchall()
-        self.cur.close()
-        i = 1
-        for a, b, c, d, e, f, g, h in self.test:
-            self.detail_list.tree.insert(parent = '', index = i, iid = i, values = (i, a, b, c, d, e, f, g, h))
-            i += 1
-            print(a)
-    def frame_box_mat_fill(self, frame):                    #виджеты фрейма_5 (материалы) UNDONE
-        pass
     def box_info_fill(self, box, box_gr):                   #заполение фрейма_3
         if box == '':
             return
@@ -780,11 +765,30 @@ class box_w(wind):
             self.info_note.new_wid.insert('1.0', self.box_info[0][1])
         except:
             pass
-        self.frame_box_det_fill_fill()
-    def frame_box_status_fill(self, frame):                 #виджеты фрейма_статус
-        self.status_bar = basic(frame.new_wid, Label, text = "-")
-        self.status_bar.grid(0, 0, 1, 1, N + S + W + E)
-    def change_field(self, event):
+        self.tree_box_det_fill()
+    def frame_box_det_fill(self, frame):                    #виджеты фрейма_4 (детали)
+        self.detail_list = trees(frame.new_wid, columns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"), \
+            displaycolumns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"))
+        self.detail_list.size(9, text_1 = "№", width_1 = 30, minwidth_1 = 30, stretch_1 = NO, text_2 = "Название", width_2 = 150, minwidth_2 = 150, \
+            stretch_2 = NO, text_3 = "Материал", width_3 = 150, minwidth_3 = 150, stretch = NO, text_4 = "Вес", width_4 = 40, minwidth_4 = 40, \
+                stretch_4 = NO, text_5 = "S1", width_5 = 40, minwidth_5 = 40, stretch_5 = NO, text_6 = "S2", width_6 = 40, minwidth_6 = 40, \
+                    stretch_6 = NO, text_7 = "S3", width_7 = 40, minwidth_7 = 40, stretch_7 = NO, text_8 = "Примечание", width_8 = 250, minwidth_8 = 250, \
+                        stretch_8 = NO, text_9 = "Кол-во", width_9 = 60, minwidth_9 = 60, stretch_9 = NO)
+        self.detail_list.tree.bind('<Double-Button-1>', lambda event: self.change_field(event))
+        self.detail_list.grid(0, 0, 1, 1)
+    def tree_box_det_fill(self):
+        self.cur = conn.cursor()
+        self.cur.execute("SELECT name, material, weight, s_primer, s_enamel, s_powderpaint, notes, num FROM product_detail WHERE box_name = {} ORDER BY material, name".format("\'" + \
+            self.info[0] + "/" + self.info[1] + "\'"))
+        self.test = self.cur.fetchall()
+        self.cur.close()
+        self.frame_box_det_drop()
+        i = 1
+        for a, b, c, d, e, f, g, h in self.test:
+            self.detail_list.tree.insert(parent = '', index = i, iid = i, values = (i, a, b, c, d, e, f, g, h))
+            i += 1
+            print(a)
+    def change_field(self, event):                          #создание окна изменения детали
         row = self.detail_list.tree.identify_row(event.y)
         col = self.detail_list.tree.identify_column(event.x)
         if row == '':
@@ -796,6 +800,13 @@ class box_w(wind):
         coltoprint = int(''.join(c for c in col if c.isdigit())) - 1
         self.entry_popup = TreeEntry(self.detail_list.tree, row, col, text[coltoprint])
         self.entry_popup.place (x = x, y = y + height // 2, anchor = W, width = width, height = height)
+    def frame_box_det_drop(self):
+        self.detail_list.tree.delete(*self.detail_list.tree.get_children())
+    def frame_box_mat_fill(self, frame):                    #виджеты фрейма_5 (материалы) UNDONE
+        pass   
+    def frame_box_status_fill(self, frame):                 #виджеты фрейма_статус
+        self.status_bar = basic(frame.new_wid, Label, text = "-")
+        self.status_bar.grid(0, 0, 1, 1, N + S + W + E)   
     def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
         if self.status == -1:
             self.tree_box_gr_fill()
