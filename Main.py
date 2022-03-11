@@ -172,7 +172,7 @@ class auth(wind):
         self.login = self.entry_log.new_wid.get()
         self.passw = self.entry_pass.new_wid.get()
         try:
-            conn = connect(dbname = "Prices", user = self.login, password = self.passw, port = "5432")
+            conn = connect(dbname = "Prices v0.2", user = self.login, password = self.passw, port = "5432")
             connection_status = 1
             main_w.status.upd(text = "Connected as {}".format(self.login))
             conn.set_session(autocommit = True)
@@ -434,7 +434,7 @@ class mat(wind):                                        #Закончено: -д
             textvariable = self.target_price)
         self.f2_wind_frame_meas = basic(self.f2_wind, tk.Labelframe, text = "Изм.:")
         self.f2_wind_meas = basic(self.f2_wind_frame_meas.new_wid, tk.Combobox, width = 8, state = 'readonly', textvariable = self.target_meas, \
-            values = ["кг", "м", "м2", "м3", "л"])
+            values = ["шт", "кг", "м", "м2", "м3", "л"])
         self.f2_wind_frame_prod = basic(self.f2_wind, tk.Labelframe, text = "Производитель:")
         self.f2_wind_prod = basic(self.f2_wind_frame_prod.new_wid, tk.Entry, width = 20, textvariable = self.target_prod)
         self.f2_wind_frame_group = basic(self.f2_wind, tk.Labelframe, text = "Группа:")
@@ -525,7 +525,7 @@ class mat(wind):                                        #Закончено: -д
                 self.cur.close()
                 self.status_bar.upd(text = "Удален материал {}".format(target_par[0]))
                 self.f2_fill()
-                self.f2_wind_close()
+                #self.f2_wind_close()
             except:
                 self.status_bar.upd(text = "Ошибка удаления материала {}".format(target_par[0]))
     def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
