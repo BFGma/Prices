@@ -147,6 +147,8 @@ INSERT INTO Mat_gr(Name) VALUES ('Материалы'), ('Автоматы'), ('
 
 INSERT INTO Vendor(Name) VALUES ('IEK'), ('ETM');
 
+INSERT INTO mat(code_gr, code_producer, code_vendor, producer_code, vendor_code, name, price, meas) values(2, 1, 2, 111111, 'ETM112332', 'ВА47-29 1р С', 125.25, DEFAULT)
+
 INSERT INTO Mat(Code_gr,Code_producer, Code_vendor, Producer_code, Vendor_code, Name, Price, Meas)
 VALUES (2, 1, 2, 112233, 332211, 'ВА47-29 1р С 16-25А', 163.99, 'шт');
 
@@ -158,4 +160,12 @@ INSERT INTO Prod_gr(Name) VALUES ('ВРУ 1'), ('ВРУ 3');
 SELECT name FROM Mat_gr;
 
 SELECT Name FROM Prod_gr;
+
+SELECT m.code, g.name, v.name AS producer, vv.name AS vendor, m.producer_code, m.vendor_code, m.name, m.price, m.meas, m.upddate
+FROM mat AS m INNER JOIN mat_gr AS g ON (m.code_gr = g.code) INNER JOIN vendor AS v ON (m.code_producer = v.code)
+INNER JOIN vendor AS vv ON (m.code_vendor = vv.code)
+
+select c.relname FROM pg_class c where c.relkind = 'S'; ВЫВЕСТИ НАЗВАНИЯ ВСЕХ ПОСЛЕДОВАТЕЛЬНОСТЕЙ
+
+select last_value FROM mat_code_seq; ВЫВЕСТИ ПОСЛЕДНЕЕ ЗНАЧЕНИЕ ПОСЛЕДОВАТЕЛЬНОСТИ
 */

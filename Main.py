@@ -1,4 +1,5 @@
-﻿from sqlite3 import enable_shared_cache
+﻿from re import A
+from sqlite3 import enable_shared_cache
 from tkinter import *
 from tkinter import messagebox
 import tkinter.ttk as tk
@@ -172,7 +173,7 @@ class auth(wind):
         self.login = self.entry_log.new_wid.get()
         self.passw = self.entry_pass.new_wid.get()
         try:
-            conn = connect(dbname = "Prices v0.2", user = self.login, password = self.passw, port = "5432")
+            conn = connect(dbname = "Prices_v0.2", user = self.login, password = self.passw, port = "5432")
             connection_status = 1
             main_w.status.upd(text = "Connected as {}".format(self.login))
             conn.set_session(autocommit = True)
@@ -207,8 +208,8 @@ class mat(wind):                                        #Закончено: -д
         self.f1_wind_status = 0
         self.f2_wind_status = 0
     def wid(self):                                          #виджеты
-        self.f1 = trees(self, columns = "Name", height = 20)
-        self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date", "Group"), displaycolumns = ("Name", "Price", "Meas", "Prod", "Date"))
+        self.f1 = trees(self, columns = ("Code","Name"), displaycolumns = ("Name"), height = 20)
+        self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date"), displaycolumns = ("Name", "Price", "Meas", "Prod", "Date"))
         self.f1.size(1, text_1 = "Название группы", width_1 = 220, minwidth_1 = 220, stretch_1 = NO)
         self.f2.size(5, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO, \
             text_2 = "Цена", width_2 = 80, minwidth_2 = 80, stretch_2 = NO, \
@@ -226,15 +227,21 @@ class mat(wind):                                        #Закончено: -д
         self.status_bar.grid(0, 2, 4, 1, N + S + W + E)
         #self.f1.tree.bind('<ButtonRelease-1>', lambda event: self.f2_fill(self.f1.tree.focus()))
         self.f1.tree.bind('<ButtonRelease-1>', self.f2_fill)
+    def get_vendor(self):
+        self.cur = conn.cursor()
+        self.cur.execute("SELECT code, name FROM vendor ORDER BY name")
+        self.vendor_list = dict(self.cur.fetchall())
+        print(list(self.vendor_list.values()))
+        self.cur.close()
     def f1_fill(self):                                      #заполнение Д1
         self.f1_drop()
-        self.f1.tree.insert(parent = '', iid = "Все", index = 0, values = "Все")
+        self.f1.tree.insert(parent = '', iid = 0, index = 0, values = (0, "Все"))
         i = 1
         self.cur = conn.cursor()
-        self.cur.execute("SELECT name FROM material_group ORDER BY name;")
+        self.cur.execute("SELECT code, name FROM Mat_gr ORDER BY name;")
         self.m_gr = self.cur.fetchall()
-        for a in self.m_gr:
-            self.f1.tree.insert(parent = '', iid = a, index = i, values = a)
+        for a, b  in self.m_gr:
+            self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, b))
             i += 1
         self.cur.close()
     def f1_drop(self):                                      #очистка Д1
@@ -256,7 +263,6 @@ class mat(wind):                                        #Закончено: -д
         self.f1_wind = Toplevel(self)
         x = programm.winfo_screenwidth()/2
         y = programm.winfo_screenheight()/2
-        print(x, y)
         self.f1_wind.geometry('+%d+%d' % (x, y))
         self.f1_wind_status = 1
         if target:
@@ -265,12 +271,8 @@ class mat(wind):                                        #Закончено: -д
             self.f1_wind.title("Добавление группы")
         self.f1_wind.resizable(0, 0)
         self.f1_wind.grab_set()
-        if target:    
-            if len(target) > 2:
-                if target[-1] == '}' and target [0] == '{':
-                    target = (target[:-1])[1:]
         self.target = StringVar()
-        self.target.set(target)
+        self.target.set(self.f1.tree.set(target, column = "Name"))
         self.f1_wind_entry = basic(self.f1_wind, tk.Entry, width = 30, textvariable = self.target)
         self.f1_wind_cancel = basic(self.f1_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f1_wind_close())
         if target:
@@ -294,33 +296,27 @@ class mat(wind):                                        #Закончено: -д
     def f1_add(self, target):                               #добавление в Д1 
         try:
             self.cur = conn.cursor()
-            self.cur.execute("INSERT INTO material_group(name) VALUES ('{}')".format(target))
+            self.cur.execute("INSERT INTO Mat_gr(name) VALUES ('{}')".format(target))
             self.cur.close()
             self.status_bar.upd(text = "Добавлена группа {}".format(target))
             self.f1_fill()
         except:
             self.status_bar.upd(text = "Ошибка добавления группы {}".format(target))
-    def f1_change(self, target, old):                       #изменение в Д1
+    def f1_change(self, target, code):                       #изменение в Д1
         if not target:
             self.status_bar.upd(text = "Поле не может быть пустым")
             return
-        if len(target) > 2:
-            if target[-1] == '}' and target[0] == '{':
-                target = (target[:-1])[1:]
         try:
             self.cur = conn.cursor()
-            self.cur.execute("UPDATE material_group SET name = '{new}' WHERE name = '{old}'".format(new = target, old = old))
+            self.cur.execute("UPDATE Mat_gr SET name = '{new}' WHERE code = '{code}'".format(new = target, code = code))
             self.cur.close()
-            self.status_bar.upd(text = "Группа {old} переименована в {new}".format(old = old, new = target))
+            self.status_bar.upd(text = "Группа {code} переименована в {new}".format(code = code, new = target))
             self.f1_fill()
             self.f1_wind_close()
-            self.f1_wind_open(target)
+            self.f1_wind_open(code)
         except:
-            self.status_bar.upd(text = "Ошибка изменения группы {}".format(old))
+            self.status_bar.upd(text = "Ошибка изменения группы {}".format(code))
     def f1_del(self, target):                               #удаление в Д1 (UND)
-        if len(target) > 2:
-            if target[-1] == '}' and target[0] == '{':
-                target = (target[:-1])[1:]
         self.f1_del_check = messagebox.askokcancel(title = "Удаление группы", \
             parent = self, message = \
                 "Удалить группу {}? Все вложенные записи будут перемещены в \"Без группы\""\
@@ -328,9 +324,10 @@ class mat(wind):                                        #Закончено: -д
         if self.f1_del_check == TRUE:
             try:
                 self.cur = conn.cursor()
-                self.cur.execute("DELETE FROM material_group WHERE name = '{}'".format(target))
+                self.cur.execute("DELETE FROM mat_gr WHERE code = {}".format(target))
                 self.cur.close()
                 self.status_bar.upd(text = "Удалена группа {}".format(target))
+                print("DELETE FROM mat_gr WHERE code = {}".format(target))
                 self.f1_fill()
             except:
                 self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
@@ -345,20 +342,18 @@ class mat(wind):                                        #Закончено: -д
         if not target:
             return
         self.f1.tree.selection_set(target)
-        if len(target) > 2:
-            if target[-1] == '}' and target[0] == '{':
-                target = (target[:-1])[1:]
         self.f2_grouptofill = target
         self.f2_drop()
         i = 0
         self.cur = conn.cursor()
-        if target == "Все":
-            self.cur.execute("SELECT №, name, price, measure, producer, upddate, group_name FROM material_unit ORDER BY name")
+        if target == "0":
+            self.cur.execute("SELECT m.code, m.code_gr, m.code_producer, v.name, m.code_vendor, m.producer_code, m.vendor_code, m.name, m.price, m.meas, m.upddate FROM mat AS m INNER JOIN vendor as v ON (m.code_producer = v.code) ORDER BY m.name")
         else:
-            self.cur.execute("SELECT №, name, price, measure, producer, upddate, group_name FROM material_unit WHERE group_name = %s ORDER BY name", (target,))
+            pass
+            self.cur.execute("SELECT m.code, m.code_gr, m.code_producer, v.name, m.code_vendor, m.producer_code, m.vendor_code, m.name, m.price, m.meas, m.upddate FROM mat as m INNER JOIN vendor as v on (m.code_producer = v.code) WHERE m.code_gr = %s ORDER BY m.name", (target,))
         self.m_u = self.cur.fetchall()
-        for a, b, c, d, e, f, g in self.m_u:
-            self.f2.tree.insert(parent = '', index = i, iid = a, values = (b, c, d, e, f, g))
+        for a, b, c, d, e, f, g, h, j, k, l in self.m_u:
+            self.f2.tree.insert(parent = '', index = i, iid = a, values = (h, j, k, d, l))
             i += 1
         self.cur.close()
     def f2_drop(self):                                      #очистка Д2
@@ -377,6 +372,8 @@ class mat(wind):                                        #Закончено: -д
         self.f2_target = self.f2.tree.identify_row(event.y)
         if self.f2_target:
             self.f2.tree.selection_set(self.f2_target)
+            #print(self.f2_target)
+            #print(self.m_u[self.f2.tree.index(self.f2_target)])
             self.f2_popup.tk_popup(event.x_root, event.y_root)
         else:
             self.f2_popup_empty.tk_popup(event.x_root, event.y_root)
@@ -391,26 +388,26 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind_status = 1
         if target:
             target_num = target
+            #print(self.m_u[self.f2.tree.index(target)])
             target = self.f2.tree.item(self.f2_target).get('values')
             self.f2_wind.title("Изменение материала")
-            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(target, target_num))
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target_num))
         else:
             target = [[],[],[],[],[],[]]
             self.f2_wind.title("Добавление материала")
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f2_add())
         self.f2_wind.resizable(0, 0)
         self.f2_wind.grab_set()
-        #if target:    
-        #    if len(target) > 2:
-        #        if target[-1] == '}' and target [0] == '{':
-        #            target = (target[:-1])[1:]
         i = 0
         self.target_group_choose = self.m_gr.copy()
+        print(self.m_gr)
         for a in self.target_group_choose:
             self.target_group_choose[i] = self.target_group_choose[i][0]
             i += 1
         self.wind_status_text = StringVar()
         self.wind_status_text.set('Изменение элемента')
+        self.target_code = StringVar()
+        
         self.target_name = StringVar()
         self.target_name.set(target[0])
         self.target_price = StringVar()
@@ -425,6 +422,8 @@ class mat(wind):                                        #Закончено: -д
         except:
             self.target_group.set(self.f2_grouptofill)
         #виджеты 
+        self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
+        self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, width = 30, state = DISABLED, textvariable = self.target_code)
         self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
         self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
         self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, width = 50, textvariable = self.target_name)
@@ -532,6 +531,7 @@ class mat(wind):                                        #Закончено: -д
         self.open()
         if self.wind_status == 0:
             self.f1_fill()
+            self.get_vendor()
             self.wind_status = 1
         self.status_bar.upd(text = "-")
     def close(self):                                        #доп. опции закрытия окна
