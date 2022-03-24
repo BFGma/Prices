@@ -113,7 +113,7 @@ class TreeEntry(Entry):                                 #Класс для из�
         self.bind("<Escape>", lambda *ignore: self.destroy())
         self.bind("<FocusOut>", self.on_return) #???? мб сделать запись в таком случае ????
     def on_return(self, event):
-        print(self.iid, self.col, self.get())
+        #print(self.iid, self.col, self.get())
         self.field.set(self.iid, self.col, value = self.get())
         self.destroy()
     def select_all(self, *ignore):
@@ -231,7 +231,6 @@ class mat(wind):                                        #Закончено: -д
         self.cur = conn.cursor()
         self.cur.execute("SELECT code, name FROM vendor ORDER BY name")
         self.vendor_list = dict(self.cur.fetchall())
-        print(list(self.vendor_list.values()))
         self.cur.close()
     def f1_fill(self):                                      #заполнение Д1
         self.f1_drop()
@@ -239,9 +238,9 @@ class mat(wind):                                        #Закончено: -д
         i = 1
         self.cur = conn.cursor()
         self.cur.execute("SELECT code, name FROM Mat_gr ORDER BY name;")
-        self.m_gr = self.cur.fetchall()
-        for a, b  in self.m_gr:
-            self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, b))
+        self.mat_gr_list = dict(self.cur.fetchall())
+        for a in self.mat_gr_list:
+            self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, self.mat_gr_list[a]))
             i += 1
         self.cur.close()
     def f1_drop(self):                                      #очистка Д1
@@ -310,24 +309,23 @@ class mat(wind):                                        #Закончено: -д
             self.cur = conn.cursor()
             self.cur.execute("UPDATE Mat_gr SET name = '{new}' WHERE code = '{code}'".format(new = target, code = code))
             self.cur.close()
-            self.status_bar.upd(text = "Группа {code} переименована в {new}".format(code = code, new = target))
+            self.status_bar.upd(text = "Группа {code} переименована в {new}".format(code = self.mat_gr_list[int(code)], new = target))
             self.f1_fill()
             self.f1_wind_close()
             self.f1_wind_open(code)
         except:
-            self.status_bar.upd(text = "Ошибка изменения группы {}".format(code))
+            self.status_bar.upd(text = "Ошибка изменения группы {}".format(self.mat_gr_list[int(code)]))
     def f1_del(self, target):                               #удаление в Д1 (UND)
         self.f1_del_check = messagebox.askokcancel(title = "Удаление группы", \
             parent = self, message = \
                 "Удалить группу {}? Все вложенные записи будут перемещены в \"Без группы\""\
-                    .format(target), icon = messagebox.WARNING)
+                    .format(self.mat_gr_list[int(target)]), icon = messagebox.WARNING)
         if self.f1_del_check == TRUE:
             try:
                 self.cur = conn.cursor()
                 self.cur.execute("DELETE FROM mat_gr WHERE code = {}".format(target))
                 self.cur.close()
-                self.status_bar.upd(text = "Удалена группа {}".format(target))
-                print("DELETE FROM mat_gr WHERE code = {}".format(target))
+                self.status_bar.upd(text = "Удалена группа {}".format(self.mat_gr_list[int(target)]))
                 self.f1_fill()
             except:
                 self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
@@ -372,8 +370,6 @@ class mat(wind):                                        #Закончено: -д
         self.f2_target = self.f2.tree.identify_row(event.y)
         if self.f2_target:
             self.f2.tree.selection_set(self.f2_target)
-            #print(self.f2_target)
-            #print(self.m_u[self.f2.tree.index(self.f2_target)])
             self.f2_popup.tk_popup(event.x_root, event.y_root)
         else:
             self.f2_popup_empty.tk_popup(event.x_root, event.y_root)
@@ -387,79 +383,77 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind.geometry('+%d+%d' % (x, y))
         self.f2_wind_status = 1
         if target:
-            target_num = target
             #print(self.m_u[self.f2.tree.index(target)])
-            target = self.f2.tree.item(self.f2_target).get('values')
+            #target = self.f2.tree.item(self.f2_target).get('values')
             self.f2_wind.title("Изменение материала")
-            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target_num))
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target))
         else:
-            target = [[],[],[],[],[],[]]
+            target = [[],[],[],[],[],[],[],[],[],[],[]]
             self.f2_wind.title("Добавление материала")
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f2_add())
         self.f2_wind.resizable(0, 0)
         self.f2_wind.grab_set()
         i = 0
-        self.target_group_choose = self.m_gr.copy()
-        print(self.m_gr)
-        for a in self.target_group_choose:
-            self.target_group_choose[i] = self.target_group_choose[i][0]
-            i += 1
+        #self.target_group_choose = self.m_gr.copy()
+        #for a in self.target_group_choose:
+        #    self.target_group_choose[i] = self.target_group_choose[i][0]
+        #    i += 1
         self.wind_status_text = StringVar()
-        self.wind_status_text.set('Изменение элемента')
+        self.wind_status_text.set('Изменение/добавление материала')
         self.target_code = StringVar()
-        
-        self.target_name = StringVar()
-        self.target_name.set(target[0])
-        self.target_price = StringVar()
-        self.target_price.set(target[1])
-        self.target_meas = StringVar()
-        self.target_meas.set(target[2])
-        self.target_prod = StringVar()
-        self.target_prod.set(target[3])
-        self.target_group = StringVar()
-        try:
-            self.target_group.set(target[5])
-        except:
-            self.target_group.set(self.f2_grouptofill)
-        #виджеты 
-        self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
-        self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, width = 30, state = DISABLED, textvariable = self.target_code)
-        self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
-        self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
-        self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, width = 50, textvariable = self.target_name)
-        self.f2_wind_frame_price = basic(self.f2_wind, tk.Labelframe, text = "Цена:")
-        self.f2_wind_price_validate = (self.register(self.f2_wind_validate), '%P')
-        self.f2_wind_price = basic(self.f2_wind_frame_price.new_wid, tk.Entry, width = 15, validate = 'key', validatecommand = self.f2_wind_price_validate, \
-            textvariable = self.target_price)
-        self.f2_wind_frame_meas = basic(self.f2_wind, tk.Labelframe, text = "Изм.:")
-        self.f2_wind_meas = basic(self.f2_wind_frame_meas.new_wid, tk.Combobox, width = 8, state = 'readonly', textvariable = self.target_meas, \
-            values = ["шт", "кг", "м", "м2", "м3", "л"])
-        self.f2_wind_frame_prod = basic(self.f2_wind, tk.Labelframe, text = "Производитель:")
-        self.f2_wind_prod = basic(self.f2_wind_frame_prod.new_wid, tk.Entry, width = 20, textvariable = self.target_prod)
-        self.f2_wind_frame_group = basic(self.f2_wind, tk.Labelframe, text = "Группа:")
-        self.f2_wind_group = basic(self.f2_wind_frame_group.new_wid, tk.Combobox, width = 30, state = 'readonly', textvariable = self.target_group, \
-            values = self.target_group_choose)
-        self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f2_wind_close())
-        #расстановка виджетов
-        self.f2_wind_status_text.grid(1, 1, 6, 1)
-        self.f2_wind_frame_name.grid(1, 2, 3, 1)
-        self.f2_wind_name.grid(0, 0, 1, 1)
-        self.f2_wind_frame_price.grid(4, 2, 1, 1)
-        self.f2_wind_price.grid(0, 0, 1, 1)
-        self.f2_wind_frame_meas.grid(5, 2, 1, 1)
-        self.f2_wind_meas.grid(0, 0, 3, 1)
-        self.f2_wind_frame_prod.grid(3, 3, 1, 1)
-        self.f2_wind_prod.grid(0, 0, 3, 1)
-        self.f2_wind_frame_group.grid(4, 3, 1, 1)
-        self.f2_wind_group.grid(0, 0, 3, 1)
-        self.f2_wind_cancel.grid(1, 5, 1, 1)
-        self.f2_wind_ok.grid(5, 5, 1, 1)
-        #обрамление 
-        self.f2_wind.columnconfigure(0, minsize = 20)
-        self.f2_wind.columnconfigure(6, minsize = 20)
-        self.f2_wind.rowconfigure(0, minsize = 20)
-        self.f2_wind.rowconfigure(3, minsize = 20)
-        self.f2_wind.rowconfigure(5, minsize = 20)
+        self.target_code.set(target)
+        #self.target_name = StringVar()
+        #self.target_name.set(target[0])
+        #self.target_price = StringVar()
+        #self.target_price.set(target[1])
+        #self.target_meas = StringVar()
+        #self.target_meas.set(target[2])
+        #self.target_prod = StringVar()
+        #self.target_prod.set(target[3])
+        #self.target_group = StringVar()
+        #try:
+        #    self.target_group.set(target[5])
+        #except:
+        #    self.target_group.set(self.f2_grouptofill)
+        ######виджеты 
+        #self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
+        #self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, width = 30, state = DISABLED, textvariable = self.target_code)
+        #self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
+        #self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
+        #self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, width = 50, textvariable = self.target_name)
+        #self.f2_wind_frame_price = basic(self.f2_wind, tk.Labelframe, text = "Цена:")
+        #self.f2_wind_price_validate = (self.register(self.f2_wind_validate), '%P')
+        #self.f2_wind_price = basic(self.f2_wind_frame_price.new_wid, tk.Entry, width = 15, validate = 'key', validatecommand = self.f2_wind_price_validate, \
+        #    textvariable = self.target_price)
+        #self.f2_wind_frame_meas = basic(self.f2_wind, tk.Labelframe, text = "Изм.:")
+        #self.f2_wind_meas = basic(self.f2_wind_frame_meas.new_wid, tk.Combobox, width = 8, state = 'readonly', textvariable = self.target_meas, \
+        #    values = ["шт", "кг", "м", "м2", "м3", "л"])
+        #self.f2_wind_frame_prod = basic(self.f2_wind, tk.Labelframe, text = "Производитель:")
+        #self.f2_wind_prod = basic(self.f2_wind_frame_prod.new_wid, tk.Entry, width = 20, textvariable = self.target_prod)
+        #self.f2_wind_frame_group = basic(self.f2_wind, tk.Labelframe, text = "Группа:")
+        #self.f2_wind_group = basic(self.f2_wind_frame_group.new_wid, tk.Combobox, width = 30, state = 'readonly', textvariable = self.target_group, \
+        #    values = self.target_group_choose)
+        #self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f2_wind_close())
+        ######расстановка виджетов
+        #self.f2_wind_status_text.grid(1, 1, 6, 1)
+        #self.f2_wind_frame_name.grid(1, 2, 3, 1)
+        #self.f2_wind_name.grid(0, 0, 1, 1)
+        #self.f2_wind_frame_price.grid(4, 2, 1, 1)
+        #self.f2_wind_price.grid(0, 0, 1, 1)
+        #self.f2_wind_frame_meas.grid(5, 2, 1, 1)
+        #self.f2_wind_meas.grid(0, 0, 3, 1)
+        #self.f2_wind_frame_prod.grid(3, 3, 1, 1)
+        #self.f2_wind_prod.grid(0, 0, 3, 1)
+        #self.f2_wind_frame_group.grid(4, 3, 1, 1)
+        #self.f2_wind_group.grid(0, 0, 3, 1)
+        #self.f2_wind_cancel.grid(1, 5, 1, 1)
+        #self.f2_wind_ok.grid(5, 5, 1, 1)
+        ######обрамление 
+        #self.f2_wind.columnconfigure(0, minsize = 20)
+        #self.f2_wind.columnconfigure(6, minsize = 20)
+        #self.f2_wind.rowconfigure(0, minsize = 20)
+        #self.f2_wind.rowconfigure(3, minsize = 20)
+        #self.f2_wind.rowconfigure(5, minsize = 20)
         self.f2_wind.protocol("WM_DELETE_WINDOW", self.f2_wind_close)
     def f2_wind_validate(self, value):                      #проверка введенных данных в Д2
         if value:

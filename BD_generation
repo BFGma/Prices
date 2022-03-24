@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS Mat (
 	Code_gr integer DEFAULT 0 REFERENCES Mat_gr(Code) ON UPDATE CASCADE ON DELETE SET NULL,
 	Code_producer integer DEFAULT 0 REFERENCES Vendor(Code) ON UPDATE CASCADE ON DELETE SET NULL,
 	Code_vendor integer DEFAULT 0 REFERENCES Vendor(Code) ON UPDATE CASCADE ON DELETE SET NULL,
-	Producer_code integer,
-	Vendor_code integer,
+	Producer_code varchar(32),
+	Vendor_code varchar(32),
 	Name varchar(100) NOT NULL UNIQUE,
 	Price numeric(12, 2) DEFAULT 0 CHECK (price >= 0),
 	Meas varchar(5) NOT NULL DEFAULT 'шт',
@@ -147,10 +147,9 @@ INSERT INTO Mat_gr(Name) VALUES ('Материалы'), ('Автоматы'), ('
 
 INSERT INTO Vendor(Name) VALUES ('IEK'), ('ETM');
 
-INSERT INTO mat(code_gr, code_producer, code_vendor, producer_code, vendor_code, name, price, meas) values(2, 1, 2, 111111, 'ETM112332', 'ВА47-29 1р С', 125.25, DEFAULT)
+INSERT INTO mat(code_gr, code_producer, code_vendor, producer_code, vendor_code, name, price, meas) values(2, 1, 2, 111111, 'ETM112332', 'ВА47-29 1р С', 125.25, DEFAULT);
 
-INSERT INTO Mat(Code_gr,Code_producer, Code_vendor, Producer_code, Vendor_code, Name, Price, Meas)
-VALUES (2, 1, 2, 112233, 332211, 'ВА47-29 1р С 16-25А', 163.99, 'шт');
+INSERT INTO mat(code_gr, code_producer, code_vendor, producer_code, vendor_code, name, price, meas) values(2, 1, 2, 111112, 'ETM112333', 'ВА47-29 2р С', 225.25, DEFAULT);
 
 INSERT INTO Prod_gr(Name) VALUES ('ВРУ 1'), ('ВРУ 3');
 */
