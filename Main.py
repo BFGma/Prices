@@ -1,4 +1,5 @@
-﻿from re import A
+﻿from asyncio.windows_events import NULL
+from re import A
 from sqlite3 import enable_shared_cache
 from tkinter import *
 from tkinter import messagebox
@@ -207,6 +208,11 @@ class mat(wind):                                        #Закончено: -д
         self.wind_status = 0
         self.f1_wind_status = 0
         self.f2_wind_status = 0
+        self.vendor_list = {0:0}
+        self.mat_gr_list = {0:0}
+        self.mat_list = {0:0}
+        self.m_u = [([0]*3 + [''] + [0] + ['']*6),]
+        print(self.m_u)
     def wid(self):                                          #виджеты
         self.f1 = trees(self, columns = ("Code","Name"), displaycolumns = ("Name"), height = 20)
         self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date"), displaycolumns = ("Name", "Price", "Meas", "Prod", "Date"))
@@ -231,6 +237,7 @@ class mat(wind):                                        #Закончено: -д
         self.cur = conn.cursor()
         self.cur.execute("SELECT code, name FROM vendor ORDER BY name")
         self.vendor_list = dict(self.cur.fetchall())
+        self.vendor_list[0] = ''
         self.cur.close()
     def f1_fill(self):                                      #заполнение Д1
         self.f1_drop()
@@ -242,6 +249,7 @@ class mat(wind):                                        #Закончено: -д
         for a in self.mat_gr_list:
             self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, self.mat_gr_list[a]))
             i += 1
+        self.mat_gr_list[0] = ''
         self.cur.close()
     def f1_drop(self):                                      #очистка Д1
         self.f1.tree.delete(*self.f1.tree.get_children())
@@ -342,7 +350,7 @@ class mat(wind):                                        #Закончено: -д
         self.f1.tree.selection_set(target)
         self.f2_grouptofill = target
         self.f2_drop()
-        i = 0
+        i = 1
         self.cur = conn.cursor()
         if target == "0":
             self.cur.execute("SELECT m.code, m.code_gr, m.code_producer, v.name, m.code_vendor, m.producer_code, m.vendor_code, m.name, m.price, m.meas, m.upddate FROM mat AS m INNER JOIN vendor as v ON (m.code_producer = v.code) ORDER BY m.name")
@@ -350,9 +358,15 @@ class mat(wind):                                        #Закончено: -д
             pass
             self.cur.execute("SELECT m.code, m.code_gr, m.code_producer, v.name, m.code_vendor, m.producer_code, m.vendor_code, m.name, m.price, m.meas, m.upddate FROM mat as m INNER JOIN vendor as v on (m.code_producer = v.code) WHERE m.code_gr = %s ORDER BY m.name", (target,))
         self.m_u = self.cur.fetchall()
+        self.mat_list = dict()
+        self.mat_list[0] = 0
         for a, b, c, d, e, f, g, h, j, k, l in self.m_u:
             self.f2.tree.insert(parent = '', index = i, iid = a, values = (h, j, k, d, l))
+            self.mat_list[a] = i
             i += 1
+        self.m_u.insert(0, ([0]*3 + [''] + [0] + ['']*6))
+        print(self.m_u)
+        print(self.mat_list)
         self.cur.close()
     def f2_drop(self):                                      #очистка Д2
         self.f2.tree.delete(*self.f2.tree.get_children())
@@ -373,7 +387,7 @@ class mat(wind):                                        #Закончено: -д
             self.f2_popup.tk_popup(event.x_root, event.y_root)
         else:
             self.f2_popup_empty.tk_popup(event.x_root, event.y_root)
-    def f2_wind_open(self, target = ''):                    #открытие окна добавления в Д2 (UND)
+    def f2_wind_open(self, target = 0):                    #открытие окна добавления в Д2 (UND)
         if self.f2_wind_status == 1:
             return
         self.f2_wind = Toplevel(self)
@@ -382,41 +396,50 @@ class mat(wind):                                        #Закончено: -д
         y = programm.winfo_screenheight()/2
         self.f2_wind.geometry('+%d+%d' % (x, y))
         self.f2_wind_status = 1
+        self.f2_wind_status_text = StringVar()
+        self.f2_target_code = StringVar()
+        self.f2_target_gr = StringVar()
+        self.f2_target_name = StringVar()
+        self.f2_target_pr = StringVar()
+        self.f2_target_v = StringVar()
+        self.f2_target_pr_code = StringVar()
+        self.f2_target_v_code = StringVar()
+        self.f2_target_price = StringVar()
+        self.f2_target_meas = StringVar()
+        self.f2_target_upddate = StringVar()
         if target:
             #print(self.m_u[self.f2.tree.index(target)])
             #target = self.f2.tree.item(self.f2_target).get('values')
             self.f2_wind.title("Изменение материала")
+            self.f2_wind_status_text.set("Изменение материала")
+            self.f2_target_code.set(self.m_u[int(target)][0])
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target))
         else:
-            target = [[],[],[],[],[],[],[],[],[],[],[]]
-            self.f2_wind.title("Добавление материала")
+            try:
+                self.cur = conn.cursor()
+                self.cur.execute("select last_value FROM mat_code_seq")
+                self.f2_target_code.set(self.cur.fetchone()[0] + 1)
+                self.cur.close()
+            except:
+                pass    
+            self.f2_wind.title("Добавление материала")   
+            self.f2_wind_status_text.set("Добавление материала")
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f2_add())
         self.f2_wind.resizable(0, 0)
         self.f2_wind.grab_set()
         i = 0
-        #self.target_group_choose = self.m_gr.copy()
-        #for a in self.target_group_choose:
-        #    self.target_group_choose[i] = self.target_group_choose[i][0]
-        #    i += 1
-        self.wind_status_text = StringVar()
-        self.wind_status_text.set('Изменение/добавление материала')
-        self.target_code = StringVar()
-        self.target_code.set(target)
-        #self.target_name = StringVar()
-        #self.target_name.set(target[0])
-        #self.target_price = StringVar()
-        #self.target_price.set(target[1])
-        #self.target_meas = StringVar()
-        #self.target_meas.set(target[2])
-        #self.target_prod = StringVar()
-        #self.target_prod.set(target[3])
-        #self.target_group = StringVar()
-        #try:
-        #    self.target_group.set(target[5])
-        #except:
-        #    self.target_group.set(self.f2_grouptofill)
+        self.f2_target_gr.set(self.mat_gr_list[self.m_u[self.mat_list[int(target)]][1]])
+        self.f2_target_name.set(self.m_u[self.mat_list[int(target)]][7])
+        self.f2_target_pr.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][2]])
+        self.f2_target_v.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][4]])
+        self.f2_target_pr_code.set(self.m_u[self.mat_list[int(target)]][5])
+        self.f2_target_v_code.set(self.m_u[self.mat_list[int(target)]][6])
+        self.f2_target_price.set(self.m_u[self.mat_list[int(target)]][8])
+        self.f2_target_meas.set(self.m_u[self.mat_list[int(target)]][9])
+        self.f2_target_upddate.set(self.m_u[self.mat_list[int(target)]][10])
+        print(self.f2_target_code.get())
         ######виджеты 
-        #self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
+        self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
         #self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, width = 30, state = DISABLED, textvariable = self.target_code)
         #self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
         #self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
