@@ -406,14 +406,14 @@ class mat(wind):                                        #Закончено: -д
         self.f2_target_v_code = StringVar()
         self.f2_target_price = StringVar()
         self.f2_target_meas = StringVar()
-        self.f2_target_upddate = StringVar()
+        self.f2_target_updd = StringVar()
         if target:
             #print(self.m_u[self.f2.tree.index(target)])
             #target = self.f2.tree.item(self.f2_target).get('values')
             self.f2_wind.title("Изменение материала")
             self.f2_wind_status_text.set("Изменение материала")
             self.f2_target_code.set(self.m_u[int(target)][0])
-            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target))
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 15, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target))
         else:
             try:
                 self.cur = conn.cursor()
@@ -424,10 +424,11 @@ class mat(wind):                                        #Закончено: -д
                 pass    
             self.f2_wind.title("Добавление материала")   
             self.f2_wind_status_text.set("Добавление материала")
-            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 10, text = "Добавить", command = lambda: self.f2_add())
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 15, text = "Добавить", command = lambda: self.f2_add())
         self.f2_wind.resizable(0, 0)
         self.f2_wind.grab_set()
         i = 0
+        print(self.f2_wind_status_text.get())
         self.f2_target_gr.set(self.mat_gr_list[self.m_u[self.mat_list[int(target)]][1]])
         self.f2_target_name.set(self.m_u[self.mat_list[int(target)]][7])
         self.f2_target_pr.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][2]])
@@ -436,46 +437,77 @@ class mat(wind):                                        #Закончено: -д
         self.f2_target_v_code.set(self.m_u[self.mat_list[int(target)]][6])
         self.f2_target_price.set(self.m_u[self.mat_list[int(target)]][8])
         self.f2_target_meas.set(self.m_u[self.mat_list[int(target)]][9])
-        self.f2_target_upddate.set(self.m_u[self.mat_list[int(target)]][10])
+        self.f2_target_updd.set(self.m_u[self.mat_list[int(target)]][10])
         print(self.f2_target_code.get())
         ######виджеты 
         self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
-        #self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, width = 30, state = DISABLED, textvariable = self.target_code)
-        #self.f2_wind_status_text = basic(self.f2_wind, tk.Label, textvariable = self.wind_status_text)
-        #self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
-        #self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, width = 50, textvariable = self.target_name)
-        #self.f2_wind_frame_price = basic(self.f2_wind, tk.Labelframe, text = "Цена:")
-        #self.f2_wind_price_validate = (self.register(self.f2_wind_validate), '%P')
-        #self.f2_wind_price = basic(self.f2_wind_frame_price.new_wid, tk.Entry, width = 15, validate = 'key', validatecommand = self.f2_wind_price_validate, \
-        #    textvariable = self.target_price)
-        #self.f2_wind_frame_meas = basic(self.f2_wind, tk.Labelframe, text = "Изм.:")
-        #self.f2_wind_meas = basic(self.f2_wind_frame_meas.new_wid, tk.Combobox, width = 8, state = 'readonly', textvariable = self.target_meas, \
-        #    values = ["шт", "кг", "м", "м2", "м3", "л"])
-        #self.f2_wind_frame_prod = basic(self.f2_wind, tk.Labelframe, text = "Производитель:")
-        #self.f2_wind_prod = basic(self.f2_wind_frame_prod.new_wid, tk.Entry, width = 20, textvariable = self.target_prod)
-        #self.f2_wind_frame_group = basic(self.f2_wind, tk.Labelframe, text = "Группа:")
-        #self.f2_wind_group = basic(self.f2_wind_frame_group.new_wid, tk.Combobox, width = 30, state = 'readonly', textvariable = self.target_group, \
-        #    values = self.target_group_choose)
-        #self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 10, text = "Отмена", command = lambda: self.f2_wind_close())
+        self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, state = DISABLED, textvariable = self.f2_target_code)
+        self.f2_wind_status_textbox = basic(self.f2_wind, tk.Label, textvariable = self.f2_wind_status_text)
+        self.f2_wind_frame_name = basic(self.f2_wind, tk.Labelframe, text = "Название:")
+        self.f2_wind_name = basic(self.f2_wind_frame_name.new_wid, tk.Entry, textvariable = self.f2_target_name)
+        self.f2_wind_frame_price = basic(self.f2_wind, tk.Labelframe, text = "Цена:")
+        self.f2_wind_price_validate = (self.register(self.f2_wind_validate), '%P')
+        self.f2_wind_price = basic(self.f2_wind_frame_price.new_wid, tk.Entry, validate = 'key', validatecommand = self.f2_wind_price_validate, \
+            textvariable = self.f2_target_price)
+        self.f2_wind_frame_meas = basic(self.f2_wind, tk.Labelframe, text = "Изм.:")
+        self.f2_wind_meas = basic(self.f2_wind_frame_meas.new_wid, tk.Combobox, state = 'readonly', textvariable = self.f2_target_meas, \
+            values = ["шт", "кг", "м", "м2", "м3", "л"])
+        self.f2_wind_frame_gr = basic(self.f2_wind, tk.Labelframe, text = "Группа:")
+        self.f2_wind_gr = basic(self.f2_wind_frame_gr.new_wid, tk.Combobox, state = 'readonly', textvariable = self.f2_target_gr, \
+            values = list(self.mat_gr_list.values()))
+        self.f2_wind_frame_updd = basic(self.f2_wind, tk.Labelframe, text = "Дата")
+        self.f2_wind_updd = basic(self.f2_wind_frame_updd.new_wid, tk.Entry, textvariable = self.f2_target_updd)
+        self.f2_wind_frame_prod = basic(self.f2_wind, tk.Labelframe, text = "Производитель:")
+        self.f2_wind_prod = basic(self.f2_wind_frame_prod.new_wid, tk.Combobox, state = 'readonly', textvariable = self.f2_target_pr, \
+            values = list(self.vendor_list.values()))
+        self.f2_wind_frame_v = basic(self.f2_wind, tk.Labelframe, text = "Поставщик:")
+        self.f2_wind_v = basic(self.f2_wind_frame_v.new_wid, tk.Combobox, state = 'readonly', textvariable = self.f2_target_v, \
+            values = list(self.vendor_list.values()))
+        self.f2_wind_frame_pr_code = basic(self.f2_wind, tk.Labelframe, text = "Код поставщика:")
+        self.f2_wind_pr_code = basic(self.f2_wind_frame_pr_code.new_wid, tk.Entry, textvariable = self.f2_target_pr_code)
+        self.f2_wind_frame_v_code = basic(self.f2_wind, tk.Labelframe, text = "Код поставщика:")
+        self.f2_wind_v_code = basic(self.f2_wind_frame_v_code.new_wid, tk.Entry, textvariable = self.f2_target_v_code)
+       
+        self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 15, text = "Отмена", command = lambda: self.f2_wind_close())
         ######расстановка виджетов
-        #self.f2_wind_status_text.grid(1, 1, 6, 1)
-        #self.f2_wind_frame_name.grid(1, 2, 3, 1)
-        #self.f2_wind_name.grid(0, 0, 1, 1)
-        #self.f2_wind_frame_price.grid(4, 2, 1, 1)
-        #self.f2_wind_price.grid(0, 0, 1, 1)
-        #self.f2_wind_frame_meas.grid(5, 2, 1, 1)
-        #self.f2_wind_meas.grid(0, 0, 3, 1)
-        #self.f2_wind_frame_prod.grid(3, 3, 1, 1)
-        #self.f2_wind_prod.grid(0, 0, 3, 1)
-        #self.f2_wind_frame_group.grid(4, 3, 1, 1)
-        #self.f2_wind_group.grid(0, 0, 3, 1)
-        #self.f2_wind_cancel.grid(1, 5, 1, 1)
-        #self.f2_wind_ok.grid(5, 5, 1, 1)
+        
+        self.f2_wind_status_textbox.grid(11, 3, 8, 1)
+        self.f2_wind_frame_code.grid(1, 1, 7, 1, N + S + W + E)
+        self.f2_wind_frame_name.grid(1, 5, 14, 1, N + S + W + E)
+        self.f2_wind_frame_price.grid(16, 5, 5, 1, N + S + W + E)
+        self.f2_wind_frame_meas.grid(22, 5, 3, 1, N + S + W + E)
+        self.f2_wind_frame_gr.grid(1, 7, 8, 1, N + S + W + E)
+        self.f2_wind_frame_prod.grid(10, 7, 7, 1, N + S + W + E)
+        self.f2_wind_frame_v.grid(18, 7, 7, 1, N + S + W + E)
+        self.f2_wind_frame_updd.grid(1, 9, 8, 1, N + S + W + E)
+        self.f2_wind_frame_pr_code.grid(10, 9, 7, 1, N + S + W + E)
+        self.f2_wind_frame_v_code.grid(18, 9, 7, 1, N + S + W + E)
+        self.f2_wind_cancel.grid(2, 11, 5, 1, N + S + W + E)
+        self.f2_wind_ok.grid(19, 11, 5, 1, N + S + W + E)
+
+        self.f2_wind_code.new_wid.pack(fill=X)#grid(1, 1, 1, 1)
+        self.f2_wind_name.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
+        self.f2_wind_price.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
+        self.f2_wind_meas.new_wid.pack(fill=X)#grid(0, 0, 3, 1)
+        self.f2_wind_gr.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
+        self.f2_wind_prod.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
+        self.f2_wind_v.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
+        self.f2_wind_updd.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
+        self.f2_wind_pr_code.new_wid.pack(fill=X)#grid(0, 0 ,1 ,1)
+        self.f2_wind_v_code.new_wid.pack(fill=X)#grid(0, 0, 1, 1)
         ######обрамление 
+        i = 0
+        while i < 26:
+            self.f2_wind.columnconfigure(i, minsize = 20)
+            i = i + 1
+        i = 0
+        while i < 13:
+            self.f2_wind.rowconfigure(i, minsize = 10)
+            i = i + 1
         #self.f2_wind.columnconfigure(0, minsize = 20)
-        #self.f2_wind.columnconfigure(6, minsize = 20)
+        #self.f2_wind.columnconfigure(25, minsize = 20)
         #self.f2_wind.rowconfigure(0, minsize = 20)
-        #self.f2_wind.rowconfigure(3, minsize = 20)
+        #self.f2_wind.rowconfigure(12, minsize = 20)
         #self.f2_wind.rowconfigure(5, minsize = 20)
         self.f2_wind.protocol("WM_DELETE_WINDOW", self.f2_wind_close)
     def f2_wind_validate(self, value):                      #проверка введенных данных в Д2
