@@ -1,4 +1,5 @@
 ﻿from asyncio.windows_events import NULL
+from cgitb import grey
 from re import A
 from sqlite3 import enable_shared_cache
 from tkinter import *
@@ -407,6 +408,7 @@ class mat(wind):                                        #Закончено: -д
         self.f2_target_price = StringVar()
         self.f2_target_meas = StringVar()
         self.f2_target_updd = StringVar()
+        self.f2_target_price_error = StringVar()
         if target:
             #print(self.m_u[self.f2.tree.index(target)])
             #target = self.f2.tree.item(self.f2_target).get('values')
@@ -467,13 +469,14 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind_pr_code = basic(self.f2_wind_frame_pr_code.new_wid, tk.Entry, textvariable = self.f2_target_pr_code)
         self.f2_wind_frame_v_code = basic(self.f2_wind, tk.Labelframe, text = "Код поставщика:")
         self.f2_wind_v_code = basic(self.f2_wind_frame_v_code.new_wid, tk.Entry, textvariable = self.f2_target_v_code)
-       
         self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 15, text = "Отмена", command = lambda: self.f2_wind_close())
+        self.f2_wind_price_error = basic(self.f2_wind, tk.Label, textvariable = self.f2_target_price_error)
         ######расстановка виджетов
         self.f2_wind_status_textbox.grid(11, 3, 8, 1)
         self.f2_wind_frame_code.grid(1, 1, 7, 1, N + S + W + E)
         self.f2_wind_frame_name.grid(1, 5, 14, 1, N + S + W + E)
         self.f2_wind_frame_price.grid(16, 5, 5, 1, N + S + W + E)
+        self.f2_wind_price_error.grid(16, 6, 5, 1, N + S + W + E)
         self.f2_wind_frame_meas.grid(22, 5, 3, 1, N + S + W + E)
         self.f2_wind_frame_gr.grid(1, 7, 8, 1, N + S + W + E)
         self.f2_wind_frame_prod.grid(10, 7, 7, 1, N + S + W + E)
@@ -508,10 +511,10 @@ class mat(wind):                                        #Закончено: -д
         if value:
             try:
                 float(value)
-                self.f2_wind_status_text.set('')
+                self.f2_target_price_error.set('')
                 return True
             except ValueError:
-                self.f2_wind_status_text.set('Неверные символы')
+                self.f2_target_price_error.set('Неверные символы')
                 return False
         else:
             #self.f2_wind_status_text.set('Цена не может быть пустой')
@@ -521,25 +524,37 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind.grab_release()
         self.f2_wind.destroy()
     def f2_add(self):                                       #добавление в Д2 (UND)
-        try:
-            if not self.target_price.get():
-                self.target_price.set(0)
-            self.cur = conn.cursor()
-            self.cur.execute("INSERT INTO material_unit(name, group_name, price, measure, producer, upddate) VALUES \
-                ('{name}', '{gr_name}', {price}, '{meas}', '{prod}', '{upddate}')".format(name = self.target_name.get(), \
-                    gr_name = self.target_group.get(), price = self.target_price.get(), meas = self.target_meas.get(), \
-                        prod = self.target_prod.get(), upddate = date.today().strftime('%Y-%m-%d')))
-            self.cur.close()
-            self.status_bar.upd(text = "Добавлен материал {}".format(self.target_name.get()))
-            self.f2_fill()
-            self.f2_wind_close()
-            self.f2_wind_open()
-        except:
-            self.status_bar.upd(text = "Ошибка добавления материала {}".format(self.target_name.get()))
+
+        # поиск кодов по словарям
+        print(list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())])
+        print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())])
+        print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())])
+
+        print("INSERT INTO mat(name, code_gr, price, meas, code_producer, upddate, code_vendor, producer_code, vendor_code) VALUES \
+            ('{name}', '{gr}', {price}, '{meas}', '{prod}', '{upddate}', '{vend}', '{prod_code}', '{vend_code}')".format(name = self.f2_target_name.get(), \
+                gr = list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())], price = self.f2_target_price.get(), meas = self.f2_target_meas.get(), \
+                    prod = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())], upddate = date.today().strftime('%Y-%m-%d'), \
+                        vend = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())], prod_code = self.f2_target_pr_code.get(), \
+                            vend_code = self.f2_target_v_code.get()))       
+                    #try:
+        #    if not self.f2_target_price.get():
+        #        self.f2_target_price.set(0)
+        #    self.cur = conn.cursor()
+        #    self.cur.execute("INSERT INTO mat(code_gr, price, meas, code_producer, upddate, code_vendor, producer_code, vendor_code) VALUES \
+        #        ('{name}', '{gr_name}', {price}, '{meas}', '{prod}', '{upddate}', '{vend}', '{prod_code}', '{vend_code}')".format(name = self.f2_target_name.get(), \
+        #            gr_name = self.vendor_list[(self.f2_target_gr.get()]), price = self.target_price.get(), meas = self.target_meas.get(), \
+        #                prod = self.target_prod.get(), upddate = date.today().strftime('%Y-%m-%d')))
+        #    self.cur.close()
+        #    self.status_bar.upd(text = "Добавлен материал {}".format(self.target_name.get()))
+        #    self.f2_fill()
+        #    self.f2_wind_close()
+        #    self.f2_wind_open()
+        #except:
+        #    self.status_bar.upd(text = "Ошибка добавления материала {}".format(self.target_name.get()))
     def f2_change(self, old_target, old_num):               #изменение в Д2 (UND)
         try:
-            if not self.target_price.get():
-                self.target_price.set(0)
+            if not self.f2_target_price.get():
+                self.f2_target_price.set(0)
             self.cur = conn.cursor()
             self.cur.execute("UPDATE material_unit SET name = '{name}', group_name \
                 = '{gr_name}', price = {price}, measure = '{meas}', producer = '{prod}', \
