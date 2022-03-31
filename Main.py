@@ -237,7 +237,7 @@ class mat(wind):                                        #Закончено: -д
         self.cur = conn.cursor()
         self.cur.execute("SELECT code, name FROM vendor ORDER BY name")
         self.vendor_list = dict(self.cur.fetchall())
-        self.vendor_list[0] = ''
+        self.vendor_list[0] = '---'
         self.cur.close()
     def f1_fill(self):                                      #заполнение Д1
         self.f1_drop()
@@ -249,7 +249,7 @@ class mat(wind):                                        #Закончено: -д
         for a in self.mat_gr_list:
             self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, self.mat_gr_list[a]))
             i += 1
-        self.mat_gr_list[0] = ''
+        self.mat_gr_list[0] = '---'
         self.cur.close()
     def f1_drop(self):                                      #очистка Д1
         self.f1.tree.delete(*self.f1.tree.get_children())
@@ -470,7 +470,6 @@ class mat(wind):                                        #Закончено: -д
        
         self.f2_wind_cancel = basic(self.f2_wind, tk.Button, width = 15, text = "Отмена", command = lambda: self.f2_wind_close())
         ######расстановка виджетов
-        
         self.f2_wind_status_textbox.grid(11, 3, 8, 1)
         self.f2_wind_frame_code.grid(1, 1, 7, 1, N + S + W + E)
         self.f2_wind_frame_name.grid(1, 5, 14, 1, N + S + W + E)
@@ -504,24 +503,19 @@ class mat(wind):                                        #Закончено: -д
         while i < 13:
             self.f2_wind.rowconfigure(i, minsize = 10)
             i = i + 1
-        #self.f2_wind.columnconfigure(0, minsize = 20)
-        #self.f2_wind.columnconfigure(25, minsize = 20)
-        #self.f2_wind.rowconfigure(0, minsize = 20)
-        #self.f2_wind.rowconfigure(12, minsize = 20)
-        #self.f2_wind.rowconfigure(5, minsize = 20)
         self.f2_wind.protocol("WM_DELETE_WINDOW", self.f2_wind_close)
     def f2_wind_validate(self, value):                      #проверка введенных данных в Д2
         if value:
             try:
                 float(value)
-                self.wind_status_text.set('')
+                self.f2_wind_status_text.set('')
                 return True
             except ValueError:
-                self.wind_status_text.set('Неверные символы')
+                self.f2_wind_status_text.set('Неверные символы')
                 return False
         else:
-            self.wind_status_text.set('Цена не может быть пустой')
-            return False
+            #self.f2_wind_status_text.set('Цена не может быть пустой')
+            return True
     def f2_wind_close(self):                                #закрытие окна добавления в Д2 (UND)
         self.f2_wind_status = 0
         self.f2_wind.grab_release()
