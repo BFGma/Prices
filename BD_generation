@@ -166,5 +166,7 @@ INNER JOIN vendor AS vv ON (m.code_vendor = vv.code)
 
 select c.relname FROM pg_class c where c.relkind = 'S'; ВЫВЕСТИ НАЗВАНИЯ ВСЕХ ПОСЛЕДОВАТЕЛЬНОСТЕЙ
 
+ALTER SEQUENCE {name} RESTART WITH {num}; ИЗМЕНИТЬ СЛЕДУЮЩЕЕ СТАРТОВОЕ ЧИСЛО ПОСЛЕДОВАТЕЛЬНОСТИ
+
 select last_value FROM mat_code_seq; ВЫВЕСТИ ПОСЛЕДНЕЕ ЗНАЧЕНИЕ ПОСЛЕДОВАТЕЛЬНОСТИ
 */

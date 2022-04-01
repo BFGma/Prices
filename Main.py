@@ -115,7 +115,6 @@ class TreeEntry(Entry):                                 #Класс для из�
         self.bind("<Escape>", lambda *ignore: self.destroy())
         self.bind("<FocusOut>", self.on_return) #???? мб сделать запись в таком случае ????
     def on_return(self, event):
-        #print(self.iid, self.col, self.get())
         self.field.set(self.iid, self.col, value = self.get())
         self.destroy()
     def select_all(self, *ignore):
@@ -209,11 +208,11 @@ class mat(wind):                                        #Закончено: -д
         self.wind_status = 0
         self.f1_wind_status = 0
         self.f2_wind_status = 0
+        self.change_vend_wind_status = 0
         self.vendor_list = {0:0}
         self.mat_gr_list = {0:0}
         self.mat_list = {0:0}
         self.m_u = [([0]*3 + [''] + [0] + ['']*6),]
-        print(self.m_u)
     def wid(self):                                          #виджеты
         self.f1 = trees(self, columns = ("Code","Name"), displaycolumns = ("Name"), height = 20)
         self.f2 = trees(self, columns = ("Name", "Price", "Meas", "Prod", "Date"), displaycolumns = ("Name", "Price", "Meas", "Prod", "Date"))
@@ -225,6 +224,7 @@ class mat(wind):                                        #Закончено: -д
                         text_5 = "Дата", width_5 = 80, minwidth_5 = 80, stretch_5 = NO)
         self.status_separ = basic(self, tk.Separator, orient = HORIZONTAL)
         self.status_bar = basic(self, Label, text = "-")
+        self.top_menu()
         self.f1_menu()
         self.f2_menu()
         self.f2_menu_empty()
@@ -240,9 +240,33 @@ class mat(wind):                                        #Закончено: -д
         self.vendor_list = dict(self.cur.fetchall())
         self.vendor_list[0] = '---'
         self.cur.close()
+    def change_vendor(self):
+        if self.change_vend_wind_status == 1:
+            return
+        self.change_vend_wind = Toplevel(self)
+        x = programm.winfo_screenwidth()/2
+        y = programm.winfo_screenheight()/2
+        self.change_vend_wind.geometry('+%d+%d' % (x, y))
+        self.change_vend_wind_status = 1
+        pass
+    def change_seq(self):
+        pass
+    def top_menu(self):
+        self.all_menu = Menu(self.mat)
+        self.config(menu = self.all_menu)
+        self.edit_menu = Menu(self.all_menu, tearoff = 0)
+        self.edit_menu.add_command(label = "Обновить", command = lambda: self.f1_fill())
+        self.edit_menu.add_command(label = "Изм. произв.", command = lambda: self.change_vendor())
+        self.all_menu.add_cascade(label = "Ред.", menu = self.edit_menu)
+        self.razr_menu = Menu(self.all_menu, tearoff = 0)
+        self.razr_menu.add_command(label = "Настройки последовательностей", command = lambda: self.change_seq())
+        #self.razr_menu.add_command(label = "Ошибка в id мат-лов", command = lambda: self.change_mat_seq())
+        self.all_menu.add_cascade(label = "Разработчик", menu = self.razr_menu)
+        pass
     def f1_fill(self):                                      #заполнение Д1
+        self.f2_drop()
         self.f1_drop()
-        self.f1.tree.insert(parent = '', iid = 0, index = 0, values = (0, "Все"))
+        self.f1.tree.insert(parent = '', iid = -1, index = 0, values = (0, "Все"))
         i = 1
         self.cur = conn.cursor()
         self.cur.execute("SELECT code, name FROM Mat_gr ORDER BY name;")
@@ -250,7 +274,7 @@ class mat(wind):                                        #Закончено: -д
         for a in self.mat_gr_list:
             self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, self.mat_gr_list[a]))
             i += 1
-        self.mat_gr_list[0] = '---'
+        #self.mat_gr_list[0] = '---'
         self.cur.close()
     def f1_drop(self):                                      #очистка Д1
         self.f1.tree.delete(*self.f1.tree.get_children())
@@ -353,7 +377,7 @@ class mat(wind):                                        #Закончено: -д
         self.f2_drop()
         i = 1
         self.cur = conn.cursor()
-        if target == "0":
+        if target == "-1":
             self.cur.execute("SELECT m.code, m.code_gr, m.code_producer, v.name, m.code_vendor, m.producer_code, m.vendor_code, m.name, m.price, m.meas, m.upddate FROM mat AS m INNER JOIN vendor as v ON (m.code_producer = v.code) ORDER BY m.name")
         else:
             pass
@@ -366,8 +390,6 @@ class mat(wind):                                        #Закончено: -д
             self.mat_list[a] = i
             i += 1
         self.m_u.insert(0, ([0]*3 + [''] + [0] + ['']*6))
-        print(self.m_u)
-        print(self.mat_list)
         self.cur.close()
     def f2_drop(self):                                      #очистка Д2
         self.f2.tree.delete(*self.f2.tree.get_children())
@@ -414,8 +436,9 @@ class mat(wind):                                        #Закончено: -д
             #target = self.f2.tree.item(self.f2_target).get('values')
             self.f2_wind.title("Изменение материала")
             self.f2_wind_status_text.set("Изменение материала")
-            self.f2_target_code.set(self.m_u[int(target)][0])
-            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 15, text = "Изменить", command = lambda: self.f2_change(self.m_u[self.f2.tree.index(target)], target))
+            #print(target, self.m_u[self.mat_list[int(target)]][0])
+            self.f2_target_code.set(target)
+            self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 15, text = "Изменить", command = lambda: self.f2_change(target))
         else:
             try:
                 self.cur = conn.cursor()
@@ -524,67 +547,64 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind.grab_release()
         self.f2_wind.destroy()
     def f2_add(self):                                       #добавление в Д2 (UND)
-
         # поиск кодов по словарям
-        print(list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())])
-        print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())])
-        print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())])
-
-        print("INSERT INTO mat(name, code_gr, price, meas, code_producer, upddate, code_vendor, producer_code, vendor_code) VALUES \
-            ('{name}', '{gr}', {price}, '{meas}', '{prod}', '{upddate}', '{vend}', '{prod_code}', '{vend_code}')".format(name = self.f2_target_name.get(), \
-                gr = list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())], price = self.f2_target_price.get(), meas = self.f2_target_meas.get(), \
-                    prod = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())], upddate = date.today().strftime('%Y-%m-%d'), \
-                        vend = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())], prod_code = self.f2_target_pr_code.get(), \
-                            vend_code = self.f2_target_v_code.get()))       
-                    #try:
-        #    if not self.f2_target_price.get():
-        #        self.f2_target_price.set(0)
-        #    self.cur = conn.cursor()
-        #    self.cur.execute("INSERT INTO mat(code_gr, price, meas, code_producer, upddate, code_vendor, producer_code, vendor_code) VALUES \
-        #        ('{name}', '{gr_name}', {price}, '{meas}', '{prod}', '{upddate}', '{vend}', '{prod_code}', '{vend_code}')".format(name = self.f2_target_name.get(), \
-        #            gr_name = self.vendor_list[(self.f2_target_gr.get()]), price = self.target_price.get(), meas = self.target_meas.get(), \
-        #                prod = self.target_prod.get(), upddate = date.today().strftime('%Y-%m-%d')))
-        #    self.cur.close()
-        #    self.status_bar.upd(text = "Добавлен материал {}".format(self.target_name.get()))
-        #    self.f2_fill()
-        #    self.f2_wind_close()
-        #    self.f2_wind_open()
-        #except:
-        #    self.status_bar.upd(text = "Ошибка добавления материала {}".format(self.target_name.get()))
-    def f2_change(self, old_target, old_num):               #изменение в Д2 (UND)
+        #print(list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())])
+        #print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())])
+        #print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())])
         try:
             if not self.f2_target_price.get():
                 self.f2_target_price.set(0)
             self.cur = conn.cursor()
-            self.cur.execute("UPDATE material_unit SET name = '{name}', group_name \
-                = '{gr_name}', price = {price}, measure = '{meas}', producer = '{prod}', \
-                    upddate = '{date}' WHERE № = {num}".format(name = self.target_name.get(), \
-                        gr_name = self.target_group.get(), price = self.target_price.get(), meas = self.target_meas.get(), \
-                            prod = self.target_prod.get(), date = date.today().strftime('%Y-%m-%d'), num = old_num))
+            self.cur.execute("INSERT INTO mat(name, code_gr, price, meas, code_producer, upddate, code_vendor, producer_code, vendor_code) VALUES \
+            ('{name}', {gr}, {price}, '{meas}', {prod}, '{upddate}', {vend}, '{prod_code}', '{vend_code}')".format(name = self.f2_target_name.get(), \
+                gr = list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())], price = self.f2_target_price.get(), meas = self.f2_target_meas.get(), \
+                    prod = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())], upddate = date.today().strftime('%Y-%m-%d'), \
+                        vend = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())], prod_code = self.f2_target_pr_code.get(), \
+                            vend_code = self.f2_target_v_code.get()))
+            
             self.cur.close()
-            self.status_bar.upd(text = "Изменен материал {}".format(old_target[0]))
+            self.status_bar.upd(text = "Добавлен материал {}".format(self.f2_target_name.get()))
             self.f2_fill()
             self.f2_wind_close()
-            #self.f2_wind_open(old_num)
+            self.f2_wind_open()
         except:
-            self.status_bar.upd(text = "Ошибка изменения материала {}".format(old_target[0]))
+            self.status_bar.upd(text = "Ошибка добавления материала {}".format(self.f2_target_name.get()))
+    def f2_change(self, code_target):               #изменение в Д2 (UND)
+        try:
+            if not self.f2_target_price.get():
+                self.f2_target_price.set(0)
+            self.cur = conn.cursor()
+            self.cur.execute("UPDATE mat SET name = '{name}', code_gr = {gr}, price = {price}, meas = '{meas}', code_producer = {prod}, \
+                    upddate = '{upddate}', code_vendor = {vend}, producer_code = '{prod_code}', vendor_code = '{vend_code}' WHERE code = {code}".format(name = self.f2_target_name.get(), \
+                        gr = list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())], price = self.f2_target_price.get(), \
+                            meas = self.f2_target_meas.get(), prod = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())], \
+                                upddate = date.today().strftime('%Y-%m-%d'), \
+                                    vend = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())], prod_code = self.f2_target_pr_code.get(), \
+                                        vend_code = self.f2_target_v_code.get(), code = code_target))
+            self.cur.close()
+            self.status_bar.upd(text = "Изменен материал {}".format(self.f2_target_name.get()))
+            self.f2_fill()
+            self.f2_wind_close()
+            #self.f2_wind_open(code_target)
+        except:
+            self.status_bar.upd(text = "Ошибка изменения материала {}".format(self.f2_target_name.get()))
     def f2_del(self, target):                               #удаление в Д2 (UND)
         if target:
-            target_par = self.f2.tree.item(self.f2_target).get('values')
+            target_name = self.m_u[self.mat_list[int(target)]][7]
         self.f2_del_check = \
             messagebox.askokcancel(title = "Удаление материала", \
                 parent = self, message = "Удалить материал {}?"\
-                    .format(target_par[0]), icon = messagebox.WARNING)
+                    .format(target_name), icon = messagebox.WARNING)
         if self.f2_del_check == TRUE:
             try:
                 self.cur = conn.cursor()
-                self.cur.execute("DELETE FROM material_unit WHERE № = {}".format(target))
+                self.cur.execute("DELETE FROM mat WHERE code = {}".format(target))
                 self.cur.close()
-                self.status_bar.upd(text = "Удален материал {}".format(target_par[0]))
+                self.status_bar.upd(text = "Удален материал {}".format(target_name))
                 self.f2_fill()
-                #self.f2_wind_close()
+                self.f2_wind_close()
             except:
-                self.status_bar.upd(text = "Ошибка удаления материала {}".format(target_par[0]))
+                self.status_bar.upd(text = "Ошибка удаления материала {}".format(target_name))
     def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
         self.open()
         if self.wind_status == 0:
