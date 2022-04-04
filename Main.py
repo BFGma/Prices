@@ -334,12 +334,11 @@ class mat(wind):                                        #Закончено: -д
         self.change_seq_vend_frame.grid(0, 3, 1, 1, N + S + W + E)
         self.change_seq_gr_now_frame = basic(self.change_seq_gr_frame.new_wid, tk.Labelframe, text = "Тек.:")
         self.change_seq_gr_max_frame = basic(self.change_seq_gr_frame.new_wid, tk.Labelframe, text = "Maкс.:")
-        self.change_seq_gr_upd = basic(self.change_seq_gr_frame.new_wid, tk.Button, text = "Записать", command = lambda: self.change_seq_upd(1))
+        self.change_seq_gr_upd = basic(self.change_seq_gr_frame.new_wid, tk.Button, state = DISABLED, text = "Записать", command = lambda: self.change_seq_upd(1))
         self.change_seq_gr_now_frame.grid(0, 0, 1, 1, N + S + W + E)
         self.change_seq_gr_max_frame.grid(1, 0, 1, 1, N + S + W + E)
         self.change_seq_gr_upd.grid(2, 0, 1, 1, N + S + W + E)
         self.change_seq_gr_now_text = StringVar()
-        self.change_seq_gr_now_text.set('suka')
         self.change_seq_gr_max_text = StringVar()
         self.change_seq_gr_now = basic(self.change_seq_gr_now_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_gr_now_text)
         self.change_seq_gr_now.grid(0, 0, 1, 1, N + S + W + E)
@@ -347,12 +346,11 @@ class mat(wind):                                        #Закончено: -д
         self.change_seq_gr_max.grid(0, 0, 1, 1, N + S + W + E)
         self.change_seq_mat_now_frame = basic(self.change_seq_mat_frame.new_wid, tk.Labelframe, text = "Тек.:")
         self.change_seq_mat_max_frame = basic(self.change_seq_mat_frame.new_wid, tk.Labelframe, text = "Maкс.:")
-        self.change_seq_mat_upd = basic(self.change_seq_mat_frame.new_wid, tk.Button, text = "Записать", command = lambda: self.change_seq_upd(2))
+        self.change_seq_mat_upd = basic(self.change_seq_mat_frame.new_wid, tk.Button, state = DISABLED, text = "Записать", command = lambda: self.change_seq_upd(2))
         self.change_seq_mat_now_frame.grid(0, 0, 1, 1, N + S + W + E)
         self.change_seq_mat_max_frame.grid(1, 0, 1, 1, N + S + W + E)
         self.change_seq_mat_upd.grid(2, 0, 1, 1, N + S + W + E)
         self.change_seq_mat_now_text = StringVar()
-        self.change_seq_mat_now_text.set('suka')
         self.change_seq_mat_max_text = StringVar()
         self.change_seq_mat_now = basic(self.change_seq_mat_now_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_mat_now_text)
         self.change_seq_mat_now.grid(0, 0, 1, 1, N + S + W + E)
@@ -360,23 +358,23 @@ class mat(wind):                                        #Закончено: -д
         self.change_seq_mat_max.grid(0, 0, 1, 1, N + S + W + E)
         self.change_seq_vend_now_frame = basic(self.change_seq_vend_frame.new_wid, tk.Labelframe, text = "Тек.:")
         self.change_seq_vend_max_frame = basic(self.change_seq_vend_frame.new_wid, tk.Labelframe, text = "Maкс.:")
-        self.change_seq_vend_upd = basic(self.change_seq_vend_frame.new_wid, tk.Button, text = "Записать", command = lambda: self.change_seq_upd(3))
+        self.change_seq_vend_upd = basic(self.change_seq_vend_frame.new_wid, tk.Button, state = DISABLED, text = "Записать", command = lambda: self.change_seq_upd(3))
         self.change_seq_vend_now_frame.grid(0, 0, 1, 1, N + S + W + E)
         self.change_seq_vend_max_frame.grid(1, 0, 1, 1, N + S + W + E)
         self.change_seq_vend_upd.grid(2, 0, 1, 1, N + S + W + E)
         self.change_seq_vend_now_text = StringVar()
-        self.change_seq_vend_now_text.set('suka')
         self.change_seq_vend_max_text = StringVar()
         self.change_seq_vend_now = basic(self.change_seq_vend_now_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_vend_now_text)
         self.change_seq_vend_now.grid(0, 0, 1, 1, N + S + W + E)
         self.change_seq_vend_max = basic(self.change_seq_vend_max_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_vend_max_text)
         self.change_seq_vend_max.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_wind.protocol("WM_DELETE_WINDOW", self.change_seq_wind_close)
     def change_seq_get(self):
         self.cur = conn.cursor()
         self.cur.execute("select last_value, is_called FROM mat_gr_code_seq")
         for a, b in self.cur.fetchall():
             if b == FALSE:
-                self.change_seq_gr_now_text.set(0)
+                self.change_seq_gr_now_text.set(a - 1)
             else:
                 self.change_seq_gr_now_text.set(a)
         self.cur.execute("select MAX(code) FROM mat_gr")
@@ -387,11 +385,13 @@ class mat(wind):                                        #Закончено: -д
             self.change_seq_gr_max_text.set(a)
         if self.change_seq_gr_now_text.get() == self.change_seq_gr_max_text.get():
             self.change_seq_gr_upd.upd(state = DISABLED)
+        else:
+            self.change_seq_gr_upd.upd(state = NORMAL)
 
         self.cur.execute("select last_value, is_called FROM mat_code_seq")
         for a, b in self.cur.fetchall():
             if b == FALSE:
-                self.change_seq_mat_now_text.set(0)
+                self.change_seq_mat_now_text.set(a - 1)
             else:
                 self.change_seq_mat_now_text.set(a)
         self.cur.execute("select MAX(code) FROM mat")
@@ -402,11 +402,13 @@ class mat(wind):                                        #Закончено: -д
             self.change_seq_mat_max_text.set(a)
         if self.change_seq_mat_now_text.get() == self.change_seq_mat_max_text.get():
             self.change_seq_mat_upd.upd(state = DISABLED)
+        else:
+            self.change_seq_mat_upd.upd(state = NORMAL)
 
         self.cur.execute("select last_value, is_called FROM vendor_code_seq")
         for a, b in self.cur.fetchall():
             if b == FALSE:
-                self.change_seq_vend_now_text.set(0)
+                self.change_seq_vend_now_text.set(a - 1)
             else:
                 self.change_seq_vend_now_text.set(a)
         self.cur.execute("select MAX(code) FROM vendor")
@@ -417,8 +419,26 @@ class mat(wind):                                        #Закончено: -д
             self.change_seq_vend_max_text.set(a)
         if self.change_seq_vend_now_text.get() == self.change_seq_vend_max_text.get():
             self.change_seq_vend_upd.upd(state = DISABLED)
+        else:
+            self.change_seq_vend_upd.upd(state = NORMAL)
 
         self.cur.close()
+
+    def change_seq_upd(self, task):
+        self.cur = conn.cursor()
+        match task:
+            case 1:
+                self.cur.execute("ALTER SEQUENCE mat_gr_code_seq RESTART WITH {}".format(int(self.change_seq_gr_max_text.get()) + 1))
+            case 2:
+                self.cur.execute("ALTER SEQUENCE mat_code_seq RESTART WITH {}".format(int(self.change_seq_mat_max_text.get()) + 1))
+            case 3:
+                self.cur.execute("ALTER SEQUENCE vendor_code_seq RESTART WITH {}".format(int(self.change_seq_vend_max_text.get()) + 1))
+        self.cur.close()
+        self.change_seq_get()
+    def change_seq_wind_close(self):
+        self.change_seq_wind_status = 0
+        self.change_seq_wind.grab_release()
+        self.change_seq_wind.destroy()
     def top_menu(self):
         self.all_menu = Menu(self.mat)
         self.config(menu = self.all_menu)
