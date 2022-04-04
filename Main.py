@@ -4,10 +4,12 @@ from re import A
 from sqlite3 import enable_shared_cache
 from tkinter import *
 from tkinter import messagebox
+from tkinter.filedialog import asksaveasfile, asksaveasfilename
 from tkinter.tix import DirSelectBox
 import tkinter.ttk as tk
 from turtle import onclick
 from psycopg2 import *
+import xlsxwriter
 from datetime import date
 
 global conn, connection_status
@@ -445,6 +447,7 @@ class mat(wind):                                        #Закончено: -д
         self.edit_menu = Menu(self.all_menu, tearoff = 0)
         self.edit_menu.add_command(label = "Обновить", command = lambda: self.f1_fill())
         self.edit_menu.add_command(label = "Изм. произв.", command = lambda: self.change_vendor())
+        self.edit_menu.add_command(label = "Создать таблицу", command = lambda: self.generate_mat_excel())
         self.all_menu.add_cascade(label = "Ред.", menu = self.edit_menu)
         self.razr_menu = Menu(self.all_menu, tearoff = 0)
         self.razr_menu.add_command(label = "Настройки последовательностей", command = lambda: self.change_seq())
@@ -625,6 +628,7 @@ class mat(wind):                                        #Закончено: -д
             self.f2_wind_status_text.set("Изменение материала")
             #print(target, self.m_u[self.mat_list[int(target)]][0])
             self.f2_target_code.set(target)
+            self.f2_target_gr.set(self.mat_gr_list[self.m_u[self.mat_list[int(target)]][1]])
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 15, text = "Изменить", command = lambda: self.f2_change(target))
         else:
             try:
@@ -636,12 +640,17 @@ class mat(wind):                                        #Закончено: -д
                 pass    
             self.f2_wind.title("Добавление материала")   
             self.f2_wind_status_text.set("Добавление материала")
+            if self.f1.tree.focus() == '-1' or self.f1.tree.focus() == '':
+                self.f2_target_gr.set(self.mat_gr_list[0])
+            else:
+                self.f2_target_gr.set(self.mat_gr_list[int(self.f1.tree.focus())])
             self.f2_wind_ok = basic(self.f2_wind, tk.Button, width = 15, text = "Добавить", command = lambda: self.f2_add())
         self.f2_wind.resizable(0, 0)
         self.f2_wind.grab_set()
         i = 0
-        print(self.f2_wind_status_text.get())
-        self.f2_target_gr.set(self.mat_gr_list[self.m_u[self.mat_list[int(target)]][1]])
+        #print(self.f2_wind_status_text.get())
+        #print(self.mat_gr_list)
+        #print('ahahaha', self.m_u[self.mat_list[int(target)]][1])
         self.f2_target_name.set(self.m_u[self.mat_list[int(target)]][7])
         self.f2_target_pr.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][2]])
         self.f2_target_v.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][4]])
@@ -650,7 +659,6 @@ class mat(wind):                                        #Закончено: -д
         self.f2_target_price.set(self.m_u[self.mat_list[int(target)]][8])
         self.f2_target_meas.set(self.m_u[self.mat_list[int(target)]][9])
         self.f2_target_updd.set(self.m_u[self.mat_list[int(target)]][10])
-        print(self.f2_target_code.get())
         ######виджеты 
         self.f2_wind_frame_code = basic(self.f2_wind, tk.Labelframe, text = "Артикул:")
         self.f2_wind_code = basic(self.f2_wind_frame_code.new_wid, tk.Entry, state = DISABLED, textvariable = self.f2_target_code)
@@ -792,6 +800,39 @@ class mat(wind):                                        #Закончено: -д
                 self.f2_wind_close()
             except:
                 self.status_bar.upd(text = "Ошибка удаления материала {}".format(target_name))
+
+    def generate_mat_excel(self):
+        files = [('Excel file', '*.xlsx')]
+        file = asksaveasfilename(filetypes = files, defaultextension = files)
+        if file == '':
+            return
+        self.mat_excel = xlsxwriter.Workbook(file)
+        self.mat_excel_1sheet = self.mat_excel.add_worksheet()
+        self.cur = conn.cursor()
+        self.cur.execute('SELECT m.code as "Код", gr.name as "Группа", v.name as "Производитель", \
+            vv.name as "Поставщик", m.producer_code as "Код произв.", m.vendor_code as "Код пост.", m.name as "Название", \
+                m.price as "Цена", m.meas as "Ед.", m.upddate "Дата обновл." FROM mat AS m INNER JOIN vendor as v ON (m.code_producer = v.code) \
+                    INNER JOIN mat_gr as gr ON (m.code_gr = gr.code) INNER JOIN vendor as vv ON (m.code_vendor = vv.code) order by gr.name, m.name;')
+        self.mat_excel_list = self.cur.fetchall()
+        prev_gr = ''
+        row = 0
+        col = 0
+        for a, b, c, d, e, f, g, h, i, j in self.mat_excel_list:
+            if not prev_gr == b:
+                self.mat_excel_1sheet.write(row, col, b)
+                row = row + 1
+            self.mat_excel_1sheet.write(row, col, a)        #код
+            self.mat_excel_1sheet.write(row, col + 1, g)    #название
+            self.mat_excel_1sheet.write(row, col + 2, h)    #цена   
+            self.mat_excel_1sheet.write(row, col + 3, i)    #измерение
+            self.mat_excel_1sheet.write(row, col + 4, j)    #дата обновления
+            self.mat_excel_1sheet.write(row, col + 5, c)    #производитель
+            self.mat_excel_1sheet.write(row, col + 6, e)    #код у производителя
+            self.mat_excel_1sheet.write(row, col + 7, d)    #поставщик
+            self.mat_excel_1sheet.write(row, col + 8, f)    #код у поставщика
+            row = row + 1
+            prev_gr = b
+        self.mat_excel.close()
     def reopen(self):                                       #открытие окна материалов по нажатию кнопки в главном окне
         self.open()
         if self.wind_status == 0:

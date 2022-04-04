@@ -168,5 +168,13 @@ select c.relname FROM pg_class c where c.relkind = 'S'; ВЫВЕСТИ НАЗВ�
 
 ALTER SEQUENCE {name} RESTART WITH {num}; ИЗМЕНИТЬ СЛЕДУЮЩЕЕ СТАРТОВОЕ ЧИСЛО ПОСЛЕДОВАТЕЛЬНОСТИ
 
+SELECT m.code as "Код", gr.name as "Группа", v.name as "Производитель", 
+vv.name as "Поставщик", m.producer_code as "Код произв.", 
+m.vendor_code as "Код пост.", m.name as "Название", m.price as "Цена", 
+m.meas as "Ед.", m.upddate "Дата обновл." FROM mat AS m 
+INNER JOIN vendor as v ON (m.code_producer = v.code) INNER JOIN mat_gr 
+as gr ON (m.code_gr = gr.code) INNER JOIN vendor as vv ON (m.code_vendor = vv.code) 
+order by gr.name, m.name;	ПОЛУЧИТЬ ТАБЛИЦУ ДЛЯ ЭКСЕЛЯ
+
 select last_value FROM mat_code_seq; ВЫВЕСТИ ПОСЛЕДНЕЕ ЗНАЧЕНИЕ ПОСЛЕДОВАТЕЛЬНОСТИ
 */
