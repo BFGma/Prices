@@ -4,6 +4,7 @@ from re import A
 from sqlite3 import enable_shared_cache
 from tkinter import *
 from tkinter import messagebox
+from tkinter.tix import DirSelectBox
 import tkinter.ttk as tk
 from turtle import onclick
 from psycopg2 import *
@@ -209,6 +210,7 @@ class mat(wind):                                        #Закончено: -д
         self.f1_wind_status = 0
         self.f2_wind_status = 0
         self.change_vend_wind_status = 0
+        self.change_seq_wind_status = 0
         self.vendor_list = {0:0}
         self.mat_gr_list = {0:0}
         self.mat_list = {0:0}
@@ -232,6 +234,7 @@ class mat(wind):                                        #Закончено: -д
         self.f2.grid(2, 1, 1, 1, N + S + W + E)
         self.status_separ.grid(0, 2, 4, 1, N + S + W + E)
         self.status_bar.grid(0, 2, 4, 1, N + S + W + E)
+        self.bind('<F5>', lambda event: self.f1_fill())
         #self.f1.tree.bind('<ButtonRelease-1>', lambda event: self.f2_fill(self.f1.tree.focus()))
         self.f1.tree.bind('<ButtonRelease-1>', self.f2_fill)
     def get_vendor(self):
@@ -247,10 +250,175 @@ class mat(wind):                                        #Закончено: -д
         x = programm.winfo_screenwidth()/2
         y = programm.winfo_screenheight()/2
         self.change_vend_wind.geometry('+%d+%d' % (x, y))
+        self.change_vend_wind.resizable(0, 0)
+        self.change_vend_wind.grab_set()
         self.change_vend_wind_status = 1
-        pass
+        self.change_vend_f = trees(self.change_vend_wind, columns = ("Code", "Name"))
+        self.change_vend_f.size(2, text_1 = "Код", width_1 = 30, stretch_1 = NO, text_2 = "Название", width_2 = 240, stretch_2 = NO)
+        self.change_vend_toadd = StringVar()
+        self.change_vend_entry = basic(self.change_vend_wind, tk.Entry, width = 30, textvariable = self.change_vend_toadd)
+        self.change_vend_button = basic(self.change_vend_wind, tk.Button, width = 30, text = "Добавить", command = lambda: self.change_vend_add(self.change_vend_toadd.get()))
+        self.change_vend_button_status = 1
+        self.change_vend_popup = Menu(self, tearoff = 0)
+        self.change_vend_popup.add_command(label = "Удалить", command = lambda: self.change_vend_del(self.change_vend_target))
+        self.change_vend_popup.add_command(label = "Переименовать", command = lambda:self.change_vend_ren(self.change_vend_target))
+        self.change_vend_f.tree.bind('<Button-3>', self.change_vend_menu)
+        self.change_vend_f.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_vend_entry.grid(0, 1, 1, 1, N + S + W + E)
+        self.change_vend_button.grid(0, 2, 1, 1, N + S + W + E)
+        self.change_vend_fill()
+        self.change_vend_wind.protocol("WM_DELETE_WINDOW", self.change_vend_wind_close)
+    def change_vend_wind_close(self):
+        self.change_vend_wind_status = 0
+        self.change_vend_wind.grab_release()
+        self.change_vend_wind.destroy()
+    def change_vend_menu(self, event):                          #открытие меню для Д1
+        self.change_vend_target = self.change_vend_f.tree.identify_row(event.y)
+        if self.change_vend_target:
+            self.change_vend_f.tree.selection_set(self.change_vend_target)
+            self.change_vend_popup.tk_popup(event.x_root, event.y_root)
+    def change_vend_fill(self):
+        self.change_vend_drop()
+        self.get_vendor()
+        print('asdasd')
+        for a in self.vendor_list:
+            if a == 0:
+                continue
+            self.change_vend_f.tree.insert(parent = '', iid = a, index = a, values = (a, self.vendor_list[a])) 
+    def change_vend_drop(self):
+        self.change_vend_f.tree.delete(*self.change_vend_f.tree.get_children())
+    def change_vend_add(self, target):
+        self.cur = conn.cursor()
+        self.cur.execute("INSERT INTO Vendor(code, name) VALUES (DEFAULT, '{}')".format(target))
+        self.cur.close()
+        self.change_vend_fill()
+    def change_vend_del(self, target):
+        self.cur = conn.cursor()
+        self.cur.execute("DELETE FROM Vendor WHERE code = {}".format(target))
+        self.cur.close()
+        self.change_vend_fill()
+    def change_vend_ren(self, target):
+        self.change_vend_toadd.set(self.vendor_list[int(target)])
+        self.change_vend_button.upd(text = "Изменить", command = lambda: self.change_vend_revr(target, self.change_vend_toadd.get()))
+        self.change_vend_button_status = -1
+        self.change_vend_wind.bind('<Escape>', lambda event: self.change_vend_back())
+    def change_vend_back(self):
+        if self.change_vend_button_status == 1:
+            return
+        self.change_vend_button.upd(text = "Добавить", command = lambda: self.change_vend_add(self.change_vend_toadd.get()))
+        self.change_vend_toadd.set('')
+        self.change_vend_button_status = 1
+    def change_vend_revr(self, code, target):
+        #print("UPDATE Vendor SET name = '{}' WHERE code = {}".format(target, code))
+        self.cur = conn.cursor()
+        self.cur.execute("UPDATE Vendor SET name = '{}' WHERE code = {}".format(target, code))
+        self.cur.close()
+        self.change_vend_fill()
     def change_seq(self):
-        pass
+        if self.change_seq_wind_status == 1:
+            return
+        self.change_seq_wind = Toplevel(self)
+        x = programm.winfo_screenwidth()/2
+        y = programm.winfo_screenheight()/2
+        self.change_seq_wind.geometry('+%d+%d' % (x, y))
+        self.change_seq_wind.resizable(0, 0)
+        self.change_seq_wind.grab_set()
+        self.change_seq_wind_status = 1
+        self.change_seq_button = basic(self.change_seq_wind, tk.Button, text = "Выгрузить значения", command = lambda: self.change_seq_get())
+        self.change_seq_gr_frame = basic(self.change_seq_wind, tk.Labelframe, text = "Посл. групп:")
+        self.change_seq_mat_frame = basic(self.change_seq_wind, tk.Labelframe, text = "Посл. материалов:")
+        self.change_seq_vend_frame = basic(self.change_seq_wind, tk.Labelframe, text = "Посл. производителей:")
+        self.change_seq_button.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_gr_frame.grid(0, 1, 1, 1, N + S + W + E)
+        self.change_seq_mat_frame.grid(0, 2, 1, 1, N + S + W + E)
+        self.change_seq_vend_frame.grid(0, 3, 1, 1, N + S + W + E)
+        self.change_seq_gr_now_frame = basic(self.change_seq_gr_frame.new_wid, tk.Labelframe, text = "Тек.:")
+        self.change_seq_gr_max_frame = basic(self.change_seq_gr_frame.new_wid, tk.Labelframe, text = "Maкс.:")
+        self.change_seq_gr_upd = basic(self.change_seq_gr_frame.new_wid, tk.Button, text = "Записать", command = lambda: self.change_seq_upd(1))
+        self.change_seq_gr_now_frame.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_gr_max_frame.grid(1, 0, 1, 1, N + S + W + E)
+        self.change_seq_gr_upd.grid(2, 0, 1, 1, N + S + W + E)
+        self.change_seq_gr_now_text = StringVar()
+        self.change_seq_gr_now_text.set('suka')
+        self.change_seq_gr_max_text = StringVar()
+        self.change_seq_gr_now = basic(self.change_seq_gr_now_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_gr_now_text)
+        self.change_seq_gr_now.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_gr_max = basic(self.change_seq_gr_max_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_gr_max_text)
+        self.change_seq_gr_max.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_mat_now_frame = basic(self.change_seq_mat_frame.new_wid, tk.Labelframe, text = "Тек.:")
+        self.change_seq_mat_max_frame = basic(self.change_seq_mat_frame.new_wid, tk.Labelframe, text = "Maкс.:")
+        self.change_seq_mat_upd = basic(self.change_seq_mat_frame.new_wid, tk.Button, text = "Записать", command = lambda: self.change_seq_upd(2))
+        self.change_seq_mat_now_frame.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_mat_max_frame.grid(1, 0, 1, 1, N + S + W + E)
+        self.change_seq_mat_upd.grid(2, 0, 1, 1, N + S + W + E)
+        self.change_seq_mat_now_text = StringVar()
+        self.change_seq_mat_now_text.set('suka')
+        self.change_seq_mat_max_text = StringVar()
+        self.change_seq_mat_now = basic(self.change_seq_mat_now_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_mat_now_text)
+        self.change_seq_mat_now.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_mat_max = basic(self.change_seq_mat_max_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_mat_max_text)
+        self.change_seq_mat_max.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_vend_now_frame = basic(self.change_seq_vend_frame.new_wid, tk.Labelframe, text = "Тек.:")
+        self.change_seq_vend_max_frame = basic(self.change_seq_vend_frame.new_wid, tk.Labelframe, text = "Maкс.:")
+        self.change_seq_vend_upd = basic(self.change_seq_vend_frame.new_wid, tk.Button, text = "Записать", command = lambda: self.change_seq_upd(3))
+        self.change_seq_vend_now_frame.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_vend_max_frame.grid(1, 0, 1, 1, N + S + W + E)
+        self.change_seq_vend_upd.grid(2, 0, 1, 1, N + S + W + E)
+        self.change_seq_vend_now_text = StringVar()
+        self.change_seq_vend_now_text.set('suka')
+        self.change_seq_vend_max_text = StringVar()
+        self.change_seq_vend_now = basic(self.change_seq_vend_now_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_vend_now_text)
+        self.change_seq_vend_now.grid(0, 0, 1, 1, N + S + W + E)
+        self.change_seq_vend_max = basic(self.change_seq_vend_max_frame.new_wid, tk.Entry, state = DISABLED, textvariable = self.change_seq_vend_max_text)
+        self.change_seq_vend_max.grid(0, 0, 1, 1, N + S + W + E)
+    def change_seq_get(self):
+        self.cur = conn.cursor()
+        self.cur.execute("select last_value, is_called FROM mat_gr_code_seq")
+        for a, b in self.cur.fetchall():
+            if b == FALSE:
+                self.change_seq_gr_now_text.set(0)
+            else:
+                self.change_seq_gr_now_text.set(a)
+        self.cur.execute("select MAX(code) FROM mat_gr")
+        a = self.cur.fetchone()[0]
+        if not a:
+            self.change_seq_gr_max_text.set(0)
+        else:
+            self.change_seq_gr_max_text.set(a)
+        if self.change_seq_gr_now_text.get() == self.change_seq_gr_max_text.get():
+            self.change_seq_gr_upd.upd(state = DISABLED)
+
+        self.cur.execute("select last_value, is_called FROM mat_code_seq")
+        for a, b in self.cur.fetchall():
+            if b == FALSE:
+                self.change_seq_mat_now_text.set(0)
+            else:
+                self.change_seq_mat_now_text.set(a)
+        self.cur.execute("select MAX(code) FROM mat")
+        a = self.cur.fetchone()[0]
+        if not a:
+            self.change_seq_mat_max_text.set(0)
+        else:
+            self.change_seq_mat_max_text.set(a)
+        if self.change_seq_mat_now_text.get() == self.change_seq_mat_max_text.get():
+            self.change_seq_mat_upd.upd(state = DISABLED)
+
+        self.cur.execute("select last_value, is_called FROM vendor_code_seq")
+        for a, b in self.cur.fetchall():
+            if b == FALSE:
+                self.change_seq_vend_now_text.set(0)
+            else:
+                self.change_seq_vend_now_text.set(a)
+        self.cur.execute("select MAX(code) FROM vendor")
+        a = self.cur.fetchone()[0]
+        if not a:
+            self.change_seq_vend_max_text.set(0)
+        else:
+            self.change_seq_vend_max_text.set(a)
+        if self.change_seq_vend_now_text.get() == self.change_seq_vend_max_text.get():
+            self.change_seq_vend_upd.upd(state = DISABLED)
+
+        self.cur.close()
     def top_menu(self):
         self.all_menu = Menu(self.mat)
         self.config(menu = self.all_menu)
@@ -262,7 +430,6 @@ class mat(wind):                                        #Закончено: -д
         self.razr_menu.add_command(label = "Настройки последовательностей", command = lambda: self.change_seq())
         #self.razr_menu.add_command(label = "Ошибка в id мат-лов", command = lambda: self.change_mat_seq())
         self.all_menu.add_cascade(label = "Разработчик", menu = self.razr_menu)
-        pass
     def f1_fill(self):                                      #заполнение Д1
         self.f2_drop()
         self.f1_drop()
