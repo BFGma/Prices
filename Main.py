@@ -428,13 +428,12 @@ class mat(wind):                                        #Закончено: -д
 
     def change_seq_upd(self, task):
         self.cur = conn.cursor()
-        match task:
-            case 1:
+        if task == 1:
                 self.cur.execute("ALTER SEQUENCE mat_gr_code_seq RESTART WITH {}".format(int(self.change_seq_gr_max_text.get()) + 1))
-            case 2:
-                self.cur.execute("ALTER SEQUENCE mat_code_seq RESTART WITH {}".format(int(self.change_seq_mat_max_text.get()) + 1))
-            case 3:
-                self.cur.execute("ALTER SEQUENCE vendor_code_seq RESTART WITH {}".format(int(self.change_seq_vend_max_text.get()) + 1))
+        elif task == 2:
+            self.cur.execute("ALTER SEQUENCE mat_code_seq RESTART WITH {}".format(int(self.change_seq_mat_max_text.get()) + 1))
+        elif task == 3:
+            self.cur.execute("ALTER SEQUENCE vendor_code_seq RESTART WITH {}".format(int(self.change_seq_vend_max_text.get()) + 1))
         self.cur.close()
         self.change_seq_get()
     def change_seq_wind_close(self):
@@ -742,10 +741,6 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind.grab_release()
         self.f2_wind.destroy()
     def f2_add(self):                                       #добавление в Д2 (UND)
-        # поиск кодов по словарям
-        #print(list(self.mat_gr_list.keys())[list(self.mat_gr_list.values()).index(self.f2_target_gr.get())])
-        #print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())])
-        #print(list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())])
         try:
             if not self.f2_target_price.get():
                 self.f2_target_price.set(0)
@@ -756,7 +751,6 @@ class mat(wind):                                        #Закончено: -д
                     prod = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_pr.get())], upddate = date.today().strftime('%Y-%m-%d'), \
                         vend = list(self.vendor_list.keys())[list(self.vendor_list.values()).index(self.f2_target_v.get())], prod_code = self.f2_target_pr_code.get(), \
                             vend_code = self.f2_target_v_code.get()))
-            
             self.cur.close()
             self.status_bar.upd(text = "Добавлен материал {}".format(self.f2_target_name.get()))
             self.f2_fill()
@@ -800,7 +794,6 @@ class mat(wind):                                        #Закончено: -д
                 self.f2_wind_close()
             except:
                 self.status_bar.upd(text = "Ошибка удаления материала {}".format(target_name))
-
     def generate_mat_excel(self):
         files = [('Excel file', '*.xlsx')]
         file = asksaveasfilename(filetypes = files, defaultextension = files)
@@ -886,7 +879,7 @@ class box_w(wind):
         self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
         i = 0
         self.cur = conn.cursor()
-        self.cur.execute("SELECT name FROM product_group ORDER BY name")
+        self.cur.execute("SELECT name FROM prod_gr ORDER BY name")
         self.box_gr = self.cur.fetchall()
         for a in self.box_gr:
             self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a[0], ))
@@ -949,7 +942,7 @@ class box_w(wind):
         if self.del_check1 == TRUE:
             self.cur = conn.cursor()
             try:
-                self.cur.execute("DELETE FROM product_group WHERE name = '{}'".format(target))
+                self.cur.execute("DELETE FROM prod_group WHERE name = '{}'".format(target))
                 self.cur.close()
                 self.status_bar.upd(text = "Удалена группа {}".format(target))
                 self.tree_box_gr_fill()
@@ -958,7 +951,7 @@ class box_w(wind):
     def add_box_gr_add(self, target):                       #добавление строки д1
         self.cur = conn.cursor()
         try:
-            self.cur.execute("INSERT INTO product_group(name) VALUES ('{}')".format(target))
+            self.cur.execute("INSERT INTO prod_group(name) VALUES ('{}')".format(target))
             self.cur.close()
             self.status_bar.upd(text = "Добавлена группа {}".format(target))
             self.tree_box_gr_fill()
@@ -969,7 +962,7 @@ class box_w(wind):
             target = (target[:-1])[1:]
         self.cur = conn.cursor()
         try:
-            self.cur.execute("UPDATE product_group SET name = '{}' where NAME = '{}'".format(edited, target))
+            self.cur.execute("UPDATE prod_group SET name = '{}' where NAME = '{}'".format(edited, target))
             self.cur.close()
             self.status_bar.upd(text = "Группа {} переименована в {}".format(target, edited))
             self.tree_box_gr_fill()
@@ -996,7 +989,7 @@ class box_w(wind):
         self.cur = conn.cursor()
         if group[-1] == '}' and group[0] == '{':
             group = (group[:-1])[1:]
-        self.cur.execute("SELECT name FROM product_box WHERE group_name = %s ORDER BY name", (group,))
+        self.cur.execute("SELECT name FROM prod_box WHERE group_name = %s ORDER BY name", (group,))
         self.box = self.cur.fetchall()
         for a in self.box:
             self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
@@ -1049,7 +1042,7 @@ class box_w(wind):
         if box_gr[-1] == '}' and box_gr[0] == '{':
             box_gr = (box_gr[:-1])[1:]
         self.cur = conn.cursor()
-        self.cur.execute("SELECT size, notes, price, code FROM product_box WHERE name = '{}' AND group_name = '{}'".format(box, box_gr))
+        self.cur.execute("SELECT size, notes, price, code FROM prod_box WHERE name = '{}' AND group_name = '{}'".format(box, box_gr))
         self.box_info = self.cur.fetchall()
         self.cur.close()
         self.info[1] = box
