@@ -800,19 +800,32 @@ class mat(wind):                                        #Закончено: -д
         if file == '':
             return
         self.mat_excel = xlsxwriter.Workbook(file)
-        self.mat_excel_1sheet = self.mat_excel.add_worksheet()
+        self.mat_excel_1sheet = self.mat_excel.add_worksheet('Цены')
         self.cur = conn.cursor()
         self.cur.execute('SELECT m.code as "Код", gr.name as "Группа", v.name as "Производитель", \
             vv.name as "Поставщик", m.producer_code as "Код произв.", m.vendor_code as "Код пост.", m.name as "Название", \
                 m.price as "Цена", m.meas as "Ед.", m.upddate "Дата обновл." FROM mat AS m INNER JOIN vendor as v ON (m.code_producer = v.code) \
                     INNER JOIN mat_gr as gr ON (m.code_gr = gr.code) INNER JOIN vendor as vv ON (m.code_vendor = vv.code) order by gr.name, m.name;')
         self.mat_excel_list = self.cur.fetchall()
+
+        self.mat_excel_format_top = self.mat_excel.add_format({'font_size': '18', 'font_color': '#191970', 'bold': True})
+        self.mat_excel_format_names = self.mat_excel.add_format({'bold': True})
+        sizes = (('Код', 6, ''), ('Название', 64, ''), ('Цена', 12, {'num_format': '0.00'}), ('Ед.', 5, ''), ('Дата', 12, {'num_format': 'dd.mm.YY'}), \
+            ('Производитель', 18, ''), ('Код произв.', 18, {'font_color': '#808080'}), ('Поставщик', 18, ''), ('Код поставщ.', 18, {'font_color': '#808080'}))
+        self.mat_excel_format = []
+        col = 0
+        for a, b, c in sizes:
+            self.mat_excel_format.append(self.mat_excel.add_format(c))
+            self.mat_excel_1sheet.set_column(col, col, b, self.mat_excel_format[col])
+            self.mat_excel_1sheet.write_string(0, col, a, self.mat_excel_format_names)
+            col = col + 1
+        
         prev_gr = ''
-        row = 0
+        row = 1
         col = 0
         for a, b, c, d, e, f, g, h, i, j in self.mat_excel_list:
             if not prev_gr == b:
-                self.mat_excel_1sheet.write(row, col, b)
+                self.mat_excel_1sheet.merge_range(row, col, row, col + 8, b, self.mat_excel_format_top)
                 row = row + 1
             self.mat_excel_1sheet.write(row, col, a)        #код
             self.mat_excel_1sheet.write(row, col + 1, g)    #название
