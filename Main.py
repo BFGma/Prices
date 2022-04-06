@@ -458,7 +458,7 @@ class mat(wind):                                        #Закончено: -д
         self.f1.tree.insert(parent = '', iid = -1, index = 0, values = (0, "Все"))
         i = 1
         self.cur = conn.cursor()
-        self.cur.execute("SELECT code, name FROM Mat_gr ORDER BY name;")
+        self.cur.execute("SELECT code, name FROM Mat_gr ORDER BY CASE WHEN code > 0 THEN code END;")
         self.mat_gr_list = dict(self.cur.fetchall())
         for a in self.mat_gr_list:
             self.f1.tree.insert(parent = '', iid = a, index = i, values = (a, self.mat_gr_list[a]))
@@ -632,8 +632,12 @@ class mat(wind):                                        #Закончено: -д
         else:
             try:
                 self.cur = conn.cursor()
-                self.cur.execute("select last_value FROM mat_code_seq")
-                self.f2_target_code.set(self.cur.fetchone()[0] + 1)
+                self.cur.execute("select last_value, is_called FROM mat_code_seq")
+                for a, b in self.cur.fetchall():
+                    if b == True:
+                        self.f2_target_code.set(a + 1)
+                    else:
+                        self.f2_target_code.set(a)
                 self.cur.close()
             except:
                 pass    
@@ -647,9 +651,6 @@ class mat(wind):                                        #Закончено: -д
         self.f2_wind.resizable(0, 0)
         self.f2_wind.grab_set()
         i = 0
-        #print(self.f2_wind_status_text.get())
-        #print(self.mat_gr_list)
-        #print('ahahaha', self.m_u[self.mat_list[int(target)]][1])
         self.f2_target_name.set(self.m_u[self.mat_list[int(target)]][7])
         self.f2_target_pr.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][2]])
         self.f2_target_v.set(self.vendor_list[self.m_u[self.mat_list[int(target)]][4]])
