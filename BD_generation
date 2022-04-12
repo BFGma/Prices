@@ -137,6 +137,24 @@ CREATE TABLE IF NOT EXISTS Setts (
 	Note varchar(64)
 );
 
+CREATE TABLE IF NOT EXISTS Prod_box_Prod_detail (
+	Code_box integer NOT NULL REFERENCES Prod_box(Code) ON UPDATE CASCADE ON DELETE CASCADE,
+	Code_detail integer NOT NULL REFERENCES Prod_detail(Code) ON UPDATE CASCADE ON DELETE CASCADE,
+	Num integer NOT NULL DEFAULT 1
+);
+
+CREATE TRIGGER box_upd_new_price AFTER UPDATE ON Mat FOR EACH ROW EXECUTE PROCEDUTE box_upd_price_mat_changed();
+CREATE FUNCTION box_upd_price_mat_changed() RETURNS TRIGGER AS $$
+BEGIN
+	
+
+CREATE TRIGGER box_upd AFTER INSERY OR UPDATE OR DELETE ON Mat_Prod_box FOR EACH ROW EXECUTE PROCEDURE box_upd_price_mat();
+CREATE FUNCTION box_upd_price_mat() RETURNS TRIGGER AS $$
+BEGIN
+	IF (TG_OP = 'DELETE') THEN
+	
+	ELSIF (TG_OP = 'UPDATE') THEN
+
 -- Примеры скриптов вставки
 
 /*
