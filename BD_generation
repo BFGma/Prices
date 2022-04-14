@@ -47,9 +47,8 @@ CREATE TABLE IF NOT EXISTS Prod_detail (
 	Code_mat integer REFERENCES Mat(Code) ON UPDATE CASCADE ON DELETE SET NULL,
 	Name varchar(32) NOT NULL,
 	Weight numeric(7, 2) DEFAULT 0,
-	S_primer numeric(7, 2) DEFAULT 0,
-	S_enamel numeric(7, 2) DEFAULT 0,
-	S_powderpaint numeric(7, 2) DEFAULT 0,
+	S numeric(7, 2) DEFAULT 0,
+	Paint_type integer DEFAULT 0,
 	Note varchar(64)
 );
 
@@ -195,4 +194,50 @@ as gr ON (m.code_gr = gr.code) INNER JOIN vendor as vv ON (m.code_vendor = vv.co
 order by gr.name, m.name;	ПОЛУЧИТЬ ТАБЛИЦУ ДЛЯ ЭКСЕЛЯ
 
 select last_value FROM mat_code_seq; ВЫВЕСТИ ПОСЛЕДНЕЕ ЗНАЧЕНИЕ ПОСЛЕДОВАТЕЛЬНОСТИ
+
+первый вариант выборки всех деталей
+WITH RECURSIVE t(prod_box, prod_box_part, num) AS (
+	SELECT prod_box, prod_box_part, num
+	FROM prod_box_prod_box WHERE prod_box = 1
+	UNION ALL
+	SELECT bb.prod_box, bb.prod_box_part, bb.num FROM
+	prod_box_prod_box bb, t where bb.prod_box = t.prod_box_part
+	)
+	SELECT code, name, sum(sumd) FROM 
+	(SELECT d.code, d.name, sum(bd.num) as sumd FROM t 
+	INNER JOIN prod_box_prod_detail AS bd ON (t.prod_box_part = bd.code_box)
+	INNER JOIN prod_detail AS d ON (bd.code_detail = d.code)
+	GROUP BY d.code, d.name
+	UNION 
+	SELECT d.code, d.name, bd.num FROM prod_box_prod_detail AS bd
+	INNER JOIN prod_detail AS d ON (bd.code_detail = d.code)
+	WHERE bd.code_box = 1) AS m
+	GROUP BY code, name
+	ORDER BY name
+
+ второй вариант выборки всех деталей
+	WITH RECURSIVE t(prod_box, prod_box_part, num) AS 
+(
+	SELECT prod_box, prod_box_part, num
+	FROM prod_box_prod_box WHERE prod_box = 1
+	UNION ALL
+	SELECT bb.prod_box, bb.prod_box_part, bb.num FROM
+	prod_box_prod_box bb, t where bb.prod_box = t.prod_box_part
+)
+SELECT m.code, m.name, sum(m.sumd), mat.name, m.weight, m.s_primer, m.s_enamel, m.s_powderpaint FROM 
+(
+	SELECT d.code, d.name, sum(bd.num) as sumd, d.weight, d.s_primer, d.s_enamel, d.s_powderpaint, d.code_mat FROM t 
+	INNER JOIN prod_box_prod_detail AS bd ON (t.prod_box_part = bd.code_box)
+	INNER JOIN prod_detail AS d ON (bd.code_detail = d.code)
+	GROUP BY d.code, d.name, d.weight, d.s_primer, d.s_enamel, d.s_powderpaint, d.code_mat
+	UNION 
+	SELECT d.code, d.name, bd.num, d.weight, d.s_primer, d.s_enamel, d.s_powderpaint, d.code_mat FROM prod_box_prod_detail AS bd
+	INNER JOIN prod_detail AS d ON (bd.code_detail = d.code)
+	WHERE bd.code_box = 1
+) AS m
+INNER JOIN mat ON (m.code_mat = mat.code)
+GROUP BY m.code, m.name, m.weight, m.s_primer, m.s_enamel, m.s_powderpaint, mat.name
+ORDER BY m.name
+
+
 */
