@@ -857,6 +857,8 @@ class box_w(wind):
         self.var()
         self.widgets_frame()
     def var(self):
+        self.box_gr_list = {0:0}
+        self.add_box_gr_status = 0
         self.info = ['', '', '', '']
         self.info_det = [[]]
     def widgets_frame(self):                                #создание фрэймов
@@ -880,57 +882,58 @@ class box_w(wind):
         self.frame_box_mat.grid(2, 3, 1, 1)
         self.frame_box_status.grid(0, 4, 3, 1)
     def frame_box_gr_fill(self, frame):                     #виджеты фрейма_1 (группы)
-        self.tree_box_gr = trees(frame.new_wid, columns = "Name", height = 30)
+        self.tree_box_gr = trees(frame.new_wid, columns = ("Code", "Name"), displaycolumns = ("Name"), height = 30)
         self.tree_box_gr.size(1, text_1 = "Название группы", width_1 = 200, minwidth_1 = 200, stretch_1 = NO)
         self.popup_menu = Menu(self, tearoff = 0)
-        self.popup_menu.add_command(label = "Удалить", command = lambda: self.del_box_gr(self.chosed))
-        self.popup_menu.add_command(label = "Изменить", command = lambda: self.add_box_gr(self.chosed))
+        self.popup_menu.add_command(label = "Удалить", command = lambda: self.del_box_gr(self.chosed_box_gr))
+        self.popup_menu.add_command(label = "Изменить", command = lambda: self.add_box_gr(self.chosed_box_gr))
         self.popup_menu.add_command(label = "Добавить", command = lambda: self.add_box_gr())
         self.tree_box_gr.grid(0, 0, 1, 1, N + S + W + E)
         self.tree_box_gr.tree.bind('<ButtonRelease-1>', lambda event: self.tree_box_fill(self.tree_box_gr.tree.focus()))
         self.tree_box_gr.tree.bind('<Button-3>', self.box_gr_popup)
     def tree_box_gr_fill(self):                             #заполение фрейма_1
-        self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
+        self.tree_box_gr_drop()
         i = 0
         self.cur = conn.cursor()
-        self.cur.execute("SELECT name FROM prod_gr ORDER BY name")
-        self.box_gr = self.cur.fetchall()
-        for a in self.box_gr:
-            self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a[0], ))
+        self.cur.execute("SELECT code, name FROM prod_gr ORDER BY name")
+        self.box_gr_list = dict(self.cur.fetchall())
+        for a in self.box_gr_list:
+            self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a, self.box_gr_list[a]))
             i += 1
         self.cur.close()
+    def tree_box_gr_drop(self):
+        self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
     def box_gr_popup(self, event):                          #вып. меню для д1
-        self.chosed = self.tree_box_gr.tree.identify_row(event.y)
-        if self.chosed:
-            self.tree_box_gr.tree.selection_set(self.chosed)
+        self.chosed_box_gr = self.tree_box_gr.tree.identify_row(event.y)
+        if self.chosed_box_gr:
+            self.popup_menu.entryconfigure(0, state = ACTIVE)
+            self.popup_menu.entryconfigure(1, state = ACTIVE)
+            self.tree_box_gr.tree.selection_set(self.chosed_box_gr)
+            self.popup_menu.tk_popup(event.x_root, event.y_root)
+        else:
+            self.popup_menu.entryconfigure(0, state = DISABLED)
+            self.popup_menu.entryconfigure(1, state = DISABLED)
             self.popup_menu.tk_popup(event.x_root, event.y_root)
     def add_box_gr(self, edit = None):                      #добавление через add_1 (группы) UNDONE
-        try:
-            if self.add_box_gr_status == 1:
-                return
-        except:
-            pass
+        if self.add_box_gr_status == 1:
+            return
         self.add_box_gr_w = Toplevel(self)
         self.add_box_gr_status = 1
+        self.add_box_gr_w.resizable(0, 0)
+        self.add_box_gr_value = StringVar()
         if edit:
             self.add_box_gr_w.title('Изменение группы')
+            self.add_box_gr_value.set(self.box_gr_list[int(edit)])
+            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), self.box_gr_list[int(edit)]))
+            self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), self.box_gr_list[int(edit)]))
         else:
             self.add_box_gr_w.title('Добавление группы')
-        self.add_box_gr_w.resizable(0, 0)
-        self.add_box_gr_w.grab_set()
-        if edit:
-            if edit[-1] == '}' and edit[0] == '{':
-                edit = (edit[:-1])[1:]
-            self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30, text = edit)
-            self.add_box_gr_entry.new_wid.delete(0, "end")
-            self.add_box_gr_entry.new_wid.insert(0, edit)
-        else:
-            self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30)
-        self.add_box_gr_cancel = basic(self.add_box_gr_w, tk.Button, width = 10, text = "Отмена", command = lambda: self.add_box_gr_close())
-        if edit:
-            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), edit))
-        else:
+            self.add_box_gr_value.set('')
             self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Добавить", command = lambda: self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
+            self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
+        self.add_box_gr_w.grab_set()
+        self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30, textvariable = self.add_box_gr_value)
+        self.add_box_gr_cancel = basic(self.add_box_gr_w, tk.Button, width = 10, text = "Отмена", command = lambda: self.add_box_gr_close())
         self.add_box_gr_entry.grid(1, 1, 3, 1, N + S + W + E)
         self.add_box_gr_cancel.grid(1, 3, 1, 1, N + S + W + E)
         self.add_box_gr_ok.grid(3, 3, 1, 1, N + S + W + E)
@@ -940,10 +943,6 @@ class box_w(wind):
         self.add_box_gr_w.rowconfigure(0, minsize=20)
         self.add_box_gr_w.rowconfigure(2, minsize=20)
         self.add_box_gr_w.rowconfigure(4, minsize=20)
-        if edit:
-            self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), edit))
-        else:
-            self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
         self.add_box_gr_w.protocol("WM_DELETE_WINDOW", self.add_box_gr_close)
     def add_box_gr_close(self):                             #закрытие окна добавления
         self.add_box_gr_status = 0
@@ -1003,7 +1002,7 @@ class box_w(wind):
         self.cur = conn.cursor()
         if group[-1] == '}' and group[0] == '{':
             group = (group[:-1])[1:]
-        self.cur.execute("SELECT name FROM prod_box WHERE group_name = %s ORDER BY name", (group,))
+        self.cur.execute("SELECT name FROM prod_box WHERE code_gr = %s ORDER BY name", (group,))
         self.box = self.cur.fetchall()
         for a in self.box:
             self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
