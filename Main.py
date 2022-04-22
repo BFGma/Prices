@@ -914,17 +914,18 @@ class box_w(wind):
             self.popup_menu.entryconfigure(0, state = DISABLED)
             self.popup_menu.entryconfigure(1, state = DISABLED)
             self.popup_menu.tk_popup(event.x_root, event.y_root)
-    def add_box_gr(self, edit = None):                      #добавление через add_1 (группы) UNDONE
+    def add_box_gr(self, edit = None):                      #добавление через add_1 (группы)
         if self.add_box_gr_status == 1:
             return
         self.add_box_gr_w = Toplevel(self)
         self.add_box_gr_status = 1
         self.add_box_gr_w.resizable(0, 0)
         self.add_box_gr_value = StringVar()
+        self.add_box_gr_note_value = StringVar()
         if edit:
             self.add_box_gr_w.title('Изменение группы')
             self.add_box_gr_value.set(self.box_gr_list[int(edit)])
-            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), self.box_gr_list[int(edit)]))
+            self.add_box_gr_ok = basic(self.add_box_gr_w, tk.Button, width = 10, text= "Изменить", command = lambda: self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), edit))
             self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_edit(self.add_box_gr_entry.new_wid.get(), self.box_gr_list[int(edit)]))
         else:
             self.add_box_gr_w.title('Добавление группы')
@@ -933,8 +934,10 @@ class box_w(wind):
             self.add_box_gr_w.bind('<Return>', lambda event:self.add_box_gr_add(self.add_box_gr_entry.new_wid.get()))
         self.add_box_gr_w.grab_set()
         self.add_box_gr_entry = basic(self.add_box_gr_w, tk.Entry, width = 30, textvariable = self.add_box_gr_value)
+        self.add_box_gr_note = basic(self.add_box_gr_w, tk.Label, textvariable = self.add_box_gr_note_value)
         self.add_box_gr_cancel = basic(self.add_box_gr_w, tk.Button, width = 10, text = "Отмена", command = lambda: self.add_box_gr_close())
         self.add_box_gr_entry.grid(1, 1, 3, 1, N + S + W + E)
+        self.add_box_gr_note.grid(1, 2, 3, 1, N + S + W + E)
         self.add_box_gr_cancel.grid(1, 3, 1, 1, N + S + W + E)
         self.add_box_gr_ok.grid(3, 3, 1, 1, N + S + W + E)
         self.add_box_gr_w.columnconfigure(0, minsize = 20)
@@ -944,45 +947,49 @@ class box_w(wind):
         self.add_box_gr_w.rowconfigure(2, minsize=20)
         self.add_box_gr_w.rowconfigure(4, minsize=20)
         self.add_box_gr_w.protocol("WM_DELETE_WINDOW", self.add_box_gr_close)
-    def add_box_gr_close(self):                             #закрытие окна добавления
+    def add_box_gr_close(self):                             #закрытие окна добавления+
         self.add_box_gr_status = 0
         self.add_box_gr_w.grab_release()
         self.add_box_gr_w.destroy()
-    def del_box_gr(self, target):                           #удаление из д1
-        if target[-1] == '}' and target[0] == '{':
-            target = (target[:-1])[1:]
-        self.del_check1 = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.format(target), icon = messagebox.WARNING)
+    def del_box_gr(self, target):                           #удаление из д1+
+        print(target)
+        self.del_check1 = messagebox.askokcancel(title = 'Удаление группы', parent = self, message = 'Удалить группу {}? Все вложенные записи будут перемещены в "Без группы"'.\
+            format(self.box_gr_list[int(target)]), icon = messagebox.WARNING)
         if self.del_check1 == TRUE:
             self.cur = conn.cursor()
             try:
-                self.cur.execute("DELETE FROM prod_group WHERE name = '{}'".format(target))
+                self.cur.execute("DELETE FROM prod_gr WHERE code = {}".format(target))
                 self.cur.close()
-                self.status_bar.upd(text = "Удалена группа {}".format(target))
+                self.status_bar.upd(text = "Удалена группа {}".format((self.box_gr_list[int(target)])))
                 self.tree_box_gr_fill()
             except:
-                self.status_bar.upd(text = "Ошибка удаления группы {}".format(target))
-    def add_box_gr_add(self, target):                       #добавление строки д1
+                self.status_bar.upd(text = "Ошибка удаления группы {}".format((self.box_gr_list[int(target)])))
+    def add_box_gr_add(self, target):                       #добавление строки д1+
         self.cur = conn.cursor()
         try:
-            self.cur.execute("INSERT INTO prod_group(name) VALUES ('{}')".format(target))
+            self.cur.execute("INSERT INTO prod_gr(name) VALUES ('{}')".format(target))
             self.cur.close()
             self.status_bar.upd(text = "Добавлена группа {}".format(target))
             self.tree_box_gr_fill()
         except:
             self.status_bar.upd(text = "Ошибка добавления группы {}".format(target))
-    def add_box_gr_edit(self, edited, target):              #изменение строки д1
-        if target[-1] == '}' and target[0] == '{':
-            target = (target[:-1])[1:]
-        self.cur = conn.cursor()
+    def add_box_gr_edit(self, edited, target):              #изменение строки д1+
+        if self.box_gr_list[int(target)] == edited:
+            self.add_box_gr_note_value.set('Имя не изменилось!')
+            return
+        elif edited == '':
+            self.add_box_gr_note_value.set('Имя не может быть пустым!')
+            return
         try:
-            self.cur.execute("UPDATE prod_group SET name = '{}' where NAME = '{}'".format(edited, target))
+            self.cur = conn.cursor()
+            self.cur.execute("UPDATE prod_gr SET name = '{}' where code = {}".format(edited, target))
             self.cur.close()
-            self.status_bar.upd(text = "Группа {} переименована в {}".format(target, edited))
+            self.status_bar.upd(text = "Группа {} переименована в {}".format(self.box_gr_list[int(target)], edited))
             self.tree_box_gr_fill()
             self.add_box_gr_close()
-            self.add_box_gr(edited)
+            self.add_box_gr(target)
         except:
-            self.status_bar.upd(text = "Ошибка изменения группы {}".format(target))
+            self.status_bar.upd(text = "Ошибка изменения группы {}".format(self.box_gr_list[int(target)]))
     def frame_box_fill(self, frame):                        #виджеты фрейма_2 (корпуса)
         self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
@@ -994,21 +1001,21 @@ class box_w(wind):
         self.tree_box.tree.bind('<Button-3>', self.box_popup)
         self.tree_box.tree.bind('<ButtonRelease-1>', lambda event: self.box_info_fill(self.tree_box.tree.focus(), self.box_gr_opened))
     def tree_box_fill(self, group):                         #заполнение фрейма_2
-        if self.box_gr_opened == group:
-            return
-        self.box_gr_opened = group
-        self.tree_box.tree.delete(*self.tree_box.tree.get_children())
+        #if self.box_gr_opened == group:
+        #    return
+        #self.box_gr_opened = group
+        self.tree_box_fill_drop()
         i = 0
         self.cur = conn.cursor()
-        if group[-1] == '}' and group[0] == '{':
-            group = (group[:-1])[1:]
         self.cur.execute("SELECT name FROM prod_box WHERE code_gr = %s ORDER BY name", (group,))
         self.box = self.cur.fetchall()
         for a in self.box:
             self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
             i += 1
         self.cur.close()
-    def box_popup(self, event):
+    def tree_box_fill_drop(self):
+        self.tree_box.tree.delete(*self.tree_box.tree.get_children())
+    def box_popup(self, event):                             #выпадающее меню фрейма_2
         self.chosed_box = self.tree_box.tree.identify_row(event.y)
         if self.chosed_box:
             self.popup_box_menu.entryconfigure(0, state = ACTIVE)
