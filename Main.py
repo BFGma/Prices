@@ -901,6 +901,10 @@ class box_w(wind):
             self.tree_box_gr.tree.insert(parent = '', index = i, iid = a, values = (a, self.box_gr_list[a]))
             i += 1
         self.cur.close()
+        try:
+            self.info_gr.upd(values = list(self.box_gr_list.values()))
+        except:
+            pass
     def tree_box_gr_drop(self):
         self.tree_box_gr.tree.delete(*self.tree_box_gr.tree.get_children())
     def box_gr_popup(self, event):                          #вып. меню для д1
@@ -991,7 +995,7 @@ class box_w(wind):
         except:
             self.status_bar.upd(text = "Ошибка изменения группы {}".format(self.box_gr_list[int(target)]))
     def frame_box_fill(self, frame):                        #виджеты фрейма_2 (корпуса)
-        self.tree_box = trees(frame.new_wid, columns = "Name", height = 30)
+        self.tree_box = trees(frame.new_wid, columns = ("Code", "Name"), displaycolumns = ("Name") , height = 30)
         self.tree_box.size(1, text_1 = "Название", width_1 = 300, minwidth_1 = 300, stretch_1 = NO)
         self.popup_box_menu = Menu(self, tearoff = 0)
         self.popup_box_menu.add_command(label = "Удалить", command = lambda: self.del_box(self.chosed_box))
@@ -1007,10 +1011,11 @@ class box_w(wind):
         self.tree_box_fill_drop()
         i = 0
         self.cur = conn.cursor()
-        self.cur.execute("SELECT name FROM prod_box WHERE code_gr = %s ORDER BY name", (group,))
-        self.box = self.cur.fetchall()
-        for a in self.box:
-            self.tree_box.tree.insert(parent = '', index = i, iid = a, values = a)
+        self.cur.execute("SELECT code, name FROM prod_box WHERE code_gr = {} ORDER BY name".format(int(group)))
+        print("SELECT code, name FROM prod_box WHERE code_gr = {} ORDER BY name".format(int(group)))
+        self.box_list = dict(self.cur.fetchall())
+        for a in self.box_list:
+            self.tree_box.tree.insert(parent = '', index = i, iid = a, values = (a, self.box_list[a]))
             i += 1
         self.cur.close()
     def tree_box_fill_drop(self):
@@ -1029,7 +1034,7 @@ class box_w(wind):
     def frame_box_info_fill(self, frame):                   #виджеты фрейма_3 (информация)
         self.info_changed_status = 0
         self.frame_info_gr = basic(frame.new_wid, tk.Labelframe, text = "Группа:")
-        self.info_gr = basic(self.frame_info_gr.new_wid, tk.Combobox, state = 'readonly')
+        self.info_gr = basic(self.frame_info_gr.new_wid, tk.Combobox, state = 'readonly', values = list(self.box_gr_list.keys()))
         self.frame_info_name = basic(frame.new_wid, tk.Labelframe, text = "Название:")
         self.info_name_value = StringVar()
         self.info_name = basic(self.frame_info_name.new_wid, tk.Entry, textvariable = self.info_name_value)
@@ -1046,45 +1051,44 @@ class box_w(wind):
         self.frame_info_name.grid(1, 0, 1, 1)
         self.frame_info_size.grid(1, 1, 1, 1)
         self.frame_info_note.grid(0, 2, 2, 1)
-    def info_changed(self, *args):
-        print(*args)
-        print(self.info_name_value.get())
-        pisya = tk.Style()
-        if self.info_changed_status == 0:
-            pisya.configure('Red.TEntry', foreground = 'red')
-        self.info_changed_status = 1
-        self.info_name.new_wid.configure(style = "Red.TEntry")
+    #def info_changed(self, *args):
+    #    print(*args)
+    #    print(self.info_name_value.get())
+    #    pisya = tk.Style()
+    #    if self.info_changed_status == 0:
+    #        pisya.configure('Red.TEntry', foreground = 'red')
+    #    self.info_changed_status = 1
+    #    self.info_name.new_wid.configure(style = "Red.TEntry")
     def box_info_fill(self, box, box_gr):                   #заполение фрейма_3
-        if box == '':
-            return
-        if box[-1] == '}' and box[0] == '{':
-            box = (box[:-1])[1:]
-        if box_gr[-1] == '}' and box_gr[0] == '{':
-            box_gr = (box_gr[:-1])[1:]
-        self.cur = conn.cursor()
-        self.cur.execute("SELECT size, notes, price, code FROM prod_box WHERE name = '{}' AND group_name = '{}'".format(box, box_gr))
-        self.box_info = self.cur.fetchall()
-        self.cur.close()
-        self.info[1] = box
-        self.info[0] = box_gr
-        self.info = [box_gr, box, self.box_info[0][0], self.box_info[0][1]]
-        print(self.info)
-        self.info_gr.new_wid.set(box_gr)
-        self.info_name_value.set(box)
-        self.info_name_value.trace_add("write", self.info_changed)
-        #self.info_name.new_wid.delete(0, "end")
-        #self.info_name.new_wid.insert(0, box)
-        try:
-            self.info_size_value.set(self.box_info[0][0])
-        except:
-            pass
-        self.info_size_value.trace_add("write", self.info_changed)
-        self.info_note.new_wid.delete('1.0', "end")
-        try:
-            self.info_note.new_wid.insert('1.0', self.box_info[0][1])
-        except:
-            pass
-        self.tree_box_det_fill()
+        print(box, box_gr)
+        #if box == '':
+        #    return
+        #if box[-1] == '}' and box[0] == '{':
+        #    box = (box[:-1])[1:]
+        #if box_gr[-1] == '}' and box_gr[0] == '{':
+        #    box_gr = (box_gr[:-1])[1:]
+        #self.cur = conn.cursor()
+        #self.cur.execute("SELECT size, notes, price, code FROM prod_box WHERE name = '{}' AND group_name = '{}'".format(box, box_gr))
+        #self.box_info = self.cur.fetchall()
+        #self.cur.close()
+        #self.info[1] = box
+        #self.info[0] = box_gr
+        #self.info = [box_gr, box, self.box_info[0][0], self.box_info[0][1]]
+        #print(self.info)
+        #self.info_gr.new_wid.set(box_gr)
+        #self.info_name_value.set(box)
+        #self.info_name_value.trace_add("write", self.info_changed)
+        #try:
+        #    self.info_size_value.set(self.box_info[0][0])
+        #except:
+        #    pass
+        #self.info_size_value.trace_add("write", self.info_changed)
+        #self.info_note.new_wid.delete('1.0', "end")
+        #try:
+        #    self.info_note.new_wid.insert('1.0', self.box_info[0][1])
+        #except:
+        #    pass
+        #self.tree_box_det_fill()
     def frame_box_det_fill(self, frame):                    #виджеты фрейма_4 (детали)
         self.detail_list = trees(frame.new_wid, columns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"), \
             displaycolumns = ("№", "Name", "Mat", "Weight", "S1", "S2", "S3", "Notes", "Num"))
